@@ -1,8 +1,9 @@
 'use client';
 
 import { Email } from "@/types";
-import { Loader2, Zap, Calendar, Flag, PenTool, Mail, Mic, MessageSquare, Users, BrainCircuit, ChevronLeft } from "lucide-react";
+import { Loader2, Zap, Calendar, Flag, PenTool, Mail, Mic, MessageSquare, Users, BrainCircuit, ChevronLeft, Send, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
+import { mutate } from "swr";
 import TrustLedger from "./TrustLedger";
 
 interface EmailViewProps {
@@ -16,9 +17,11 @@ interface EmailViewProps {
 export function EmailView({ email, onProcess, isProcessing, onBack, className = '' }: EmailViewProps) {
   const [isDrafting, setIsDrafting] = useState(false);
   const [isSwarmDrafting, setIsSwarmDrafting] = useState(false);
-  const [generatedDraft, setGeneratedDraft] = useState<{ subject: string; body: string; swarmAnalysis?: string } | null>(null);
+  const [generatedDraft, setGeneratedDraft] = useState<{ id: string; subject: string; body: string; swarmAnalysis?: string } | null>(null);
   const [smartChips, setSmartChips] = useState<string[]>([]);
   const [isListening, setIsListening] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [sendSuccess, setSendSuccess] = useState(false);
   
   // Reset local state when email changes
   useEffect(() => {
@@ -26,6 +29,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
     setIsDrafting(false);
     setIsSwarmDrafting(false);
     setSmartChips([]);
+    setSendSuccess(false);
     if (email) {
        // Fetch Smart Chips
        fetch('/api/chips', { method: 'POST', body: JSON.stringify({ emailId: email.id }) })
@@ -40,6 +44,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
     else setIsDrafting(true);
     
     setGeneratedDraft(null); // Clear previous draft
+    setSendSuccess(false);
     
     try {
       const res = await fetch('/api/draft', {
@@ -65,6 +70,38 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
     } finally {
       setIsDrafting(false);
       setIsSwarmDrafting(false);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!generatedDraft?.id) return;
+    
+    setIsSending(true);
+    try {
+      const res = await fetch('/api/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ draftId: generatedDraft.id }),
+      });
+
+      if (!res.ok) throw new Error("Failed to send email");
+
+      // Success
+      setSendSuccess(true);
+      mutate('/api/sent'); // Refresh sent list
+      mutate('/api/drafts'); // Refresh drafts list (it should be removed)
+      
+      // Hide the draft card after a delay or keep success message
+      setTimeout(() => {
+          setGeneratedDraft(null);
+          setSendSuccess(false);
+      }, 3000);
+
+    } catch (e: any) {
+      console.error("Send Error:", e);
+      alert(`Error sending email: ${e.message}`);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -296,7 +333,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
              <div className="flex justify-between items-center mb-4">
                <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
                  <Mail className="w-4 h-4 text-indigo-500" />
-                 Auto-Generated Reply
+                 {sendSuccess ? "Reply Sent Successfully" : "Auto-Generated Reply"}
                </h3>
                <div className="flex gap-2">
                   <button className="text-xs bg-white px-3 py-1 rounded border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors">
@@ -304,31 +341,49 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
                   </button>
                </div>
              </div>
-             <div className="bg-white rounded-xl border border-indigo-100 p-4 shadow-sm">
-                <div className="mb-2 text-sm font-semibold text-slate-800 border-b border-slate-100 pb-2">
-                  Subject: {generatedDraft.subject}
-                </div>
-                <div className="whitespace-pre-wrap text-slate-600 text-sm leading-relaxed font-mono">
-                  {generatedDraft.body}
-                </div>
-                
-                {generatedDraft.swarmAnalysis && (
-                    <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 font-mono whitespace-pre-wrap">
-                        <div className="font-bold text-slate-800 mb-2 flex items-center gap-2">
-                            <Users className="w-3 h-3" /> Swarm Intelligence Log
-                        </div>
-                        {generatedDraft.swarmAnalysis}
+             
+             {sendSuccess ? (
+                <div className="bg-white rounded-xl border border-green-200 p-8 shadow-sm flex flex-col items-center justify-center text-center">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
+                        <CheckCircle className="w-6 h-6 text-green-600" />
                     </div>
-                )}
+                    <h3 className="text-lg font-bold text-slate-900">Email Sent!</h3>
+                    <p className="text-sm text-slate-500">Your reply has been delivered and archived.</p>
+                </div>
+             ) : (
+                <>
+                    <div className="bg-white rounded-xl border border-indigo-100 p-4 shadow-sm">
+                        <div className="mb-2 text-sm font-semibold text-slate-800 border-b border-slate-100 pb-2">
+                        Subject: {generatedDraft.subject}
+                        </div>
+                        <div className="whitespace-pre-wrap text-slate-600 text-sm leading-relaxed font-mono">
+                        {generatedDraft.body}
+                        </div>
+                        
+                        {generatedDraft.swarmAnalysis && (
+                            <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 font-mono whitespace-pre-wrap">
+                                <div className="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                                    <Users className="w-3 h-3" /> Swarm Intelligence Log
+                                </div>
+                                {generatedDraft.swarmAnalysis}
+                            </div>
+                        )}
 
-                {/* Trust Ledger Integration */}
-                <TrustLedger />
-             </div>
-             <div className="mt-3 flex justify-end">
-               <button className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 shadow-sm transition-colors">
-                 Send Now
-               </button>
-             </div>
+                        {/* Trust Ledger Integration */}
+                        <TrustLedger />
+                    </div>
+                    <div className="mt-3 flex justify-end">
+                    <button 
+                        onClick={handleSend}
+                        disabled={isSending}
+                        className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 shadow-sm transition-colors flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                        {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        {isSending ? 'Sending...' : 'Send Now'}
+                    </button>
+                    </div>
+                </>
+             )}
           </div>
         )}
 

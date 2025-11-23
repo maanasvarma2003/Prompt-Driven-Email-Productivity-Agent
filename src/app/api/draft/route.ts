@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     
     try {
          if (mode === 'swarm') {
-             console.log("🐝 Activating Swarm Mode...");
+             console.log("🐝 Activating Swarm Mode (Multi-Agent Debate)...");
              const swarmResult = await runSwarm(`
                 Sender: ${email.sender}
                 Subject: ${email.subject}
@@ -37,23 +37,26 @@ export async function POST(req: Request) {
              `);
              draftContent = { ...swarmResult };
          } else {
-             console.log(`🧠 Invoking Groq Llama3 (SMART_MODEL) for High-Fidelity Draft...`);
+             console.log(`🧠 Invoking Groq Llama3 (SMART_MODEL) for World-Class Draft...`);
              const { object } = await resilientGenerateObject({
                 mode: 'smart', 
                 schema: DraftSchema,
                 prompt: `
-                  Reply to this email.
+                  You are a world-class Executive Assistant known for perfect, precise, and professional communication.
                   
-                  Email Context:
+                  TASK: Draft a reply to the email below.
+                  
+                  CONTEXT:
                   - From: ${email.sender}
                   - Subject: ${email.subject}
                   - Body: "${email.body.substring(0, 4000)}"
-                  - Instruction: "${instruction || "Reply appropriately."}"
+                  - User Instruction: "${instruction || "Reply appropriately. Be concise and polite."}"
                   
-                  Constraints:
-                  1. Direct, professional, under 100 words.
-                  2. Use details from email.
-                  3. NO placeholders.
+                  GUIDELINES:
+                  1. Tone: Professional, confident, and warm.
+                  2. Precision: Address all key points from the email directly.
+                  3. Format: Clean, with proper spacing. No placeholders like "[Your Name]" - sign off as "MailMint AI Agent".
+                  4. Length: Concise (under 150 words) unless the topic requires depth.
                 `,
                 temperature: 0.3, 
              });
@@ -61,13 +64,13 @@ export async function POST(req: Request) {
              draftContent = { ...draftData, swarmAnalysis: '' };
          }
          
-         console.log("✅ AI generated draft.");
+         console.log("✅ AI generated draft successfully.");
 
     } catch (e) {
          console.error("⚠️ LLM Generation Failed:", e);
          draftContent = {
             subject: `Re: ${email.subject}`,
-            body: `Hi ${senderName},\n\nI received your email regarding "${email.subject}" and will review it shortly.\n\nBest,\n[Your Name]`,
+            body: `Hi ${senderName},\n\nI received your email regarding "${email.subject}" and will review it shortly.\n\nBest,\nMailMint AI Agent`,
             swarmAnalysis: ''
          };
     }
@@ -76,14 +79,9 @@ export async function POST(req: Request) {
     if (!draftContent || !draftContent.body) {
          draftContent = {
             subject: `Re: ${email.subject}`,
-            body: `Hi ${senderName},\n\n(Draft generation encountered an issue. Please edit manually.)\n\nBest,\n[Your Name]`,
+            body: `Hi ${senderName},\n\n(Draft generation encountered an issue. Please edit manually.)\n\nBest,\nMailMint AI Agent`,
             swarmAnalysis: ''
          };
-    }
-
-    // Cache result if not custom instruction
-    if (!instruction && draftContent) {
-        // aiCache.set(...) - Commented out for now as aiCache is not imported, or handle import properly
     }
 
     // Save draft to store
