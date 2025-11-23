@@ -1,3 +1,5 @@
+'use server';
+
 import { z } from 'zod';
 import { resilientGenerateObject, SMART_MODEL, FAST_MODEL } from './resilient';
 import { groq } from './groq';
