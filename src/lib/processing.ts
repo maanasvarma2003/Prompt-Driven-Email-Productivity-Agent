@@ -35,7 +35,24 @@ export async function processEmail(emailId: string) {
     if (email.analysis && email.category && email.priorityMatrix) {
       return email;
     }
-    // ...
+
+    // 1. Check Cache (Performance)
+    const cacheKey = aiCache.generateKey('process', { id: emailId, contentHash: email.body.length });
+    const cachedResult = aiCache.get(cacheKey);
+    if (cachedResult) {
+        console.log(`⚡ Returning Cached Process Result for ${emailId}`);
+        return db.updateEmail(emailId, cachedResult);
+    }
+
+    console.log(`🚀 Starting Intelligent Processing for ${emailId}...`);
+    const startTime = Date.now();
+    let finalResult;
+
+    // ⚡ HYBRID APPROACH: Fast-Path + Accurate-Path
+    const sender = email.sender.toLowerCase();
+    const bodyText = email.body.toLowerCase();
+    const subject = email.subject.toLowerCase();
+
     // --- FAST PATH (Milliseconds) ---
     let isFastPath = false;
     let fastCategory: any = null;
