@@ -14,11 +14,11 @@ export async function resilientGenerateObject<T>(params: any & { mode?: 'fast' |
   const { mode, ...aiSDKParams } = params;
 
   try {
-      return await generateObject({
-        ...aiSDKParams,
+  return await generateObject({
+    ...aiSDKParams,
         model: groq(modelId),
-        temperature: tuningParams.temperature,
-      });
+    temperature: tuningParams.temperature,
+  });
   } catch (error: any) {
       console.warn(`⚠️ Primary model ${modelId} failed. Retrying with backup...`);
       if (params.mode === 'smart') {
@@ -34,7 +34,7 @@ export async function resilientGenerateObject<T>(params: any & { mode?: 'fast' |
 }
 
 export async function resilientStreamText(params: any & { mode?: 'fast' | 'smart' }) {
-    const modelId = params.mode === 'fast' ? FAST_MODEL : SMART_MODEL;
+   const modelId = params.mode === 'fast' ? FAST_MODEL : SMART_MODEL;
     
     try {
         return await streamText({
@@ -43,9 +43,9 @@ export async function resilientStreamText(params: any & { mode?: 'fast' | 'smart
         });
     } catch (error) {
         console.warn(`⚠️ Stream failed with ${modelId}. Fallback to FAST_MODEL.`);
-        return await streamText({
+   return await streamText({
             ...params,
             model: groq(FAST_MODEL),
-        });
+   });
     }
 }

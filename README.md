@@ -21,7 +21,7 @@
     -   Add your key:
         ```env
         GROQ_API_KEY=gsk_...
-        ```
+    ```
 
 3.  **Run the App**
     ```bash

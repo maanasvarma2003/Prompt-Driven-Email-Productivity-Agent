@@ -272,7 +272,7 @@ export async function POST(req: Request) {
           });
 
           return createStreamResponse(
-             `I've created a draft for you.\n\n**Subject:** ${draft.subject}\n\n**Body:**\n${draft.body}\n\nYou can find it in the Drafts tab.`
+             `I've created a draft for you.\n\n**Subject:** ${draft.subject}\n\n**Body:**\n${draft.body}\n\nYou can find it in the Drafts tab.\n<!-- DRAFT_ID:${draft.id} -->`
           );
        }
     }
@@ -299,7 +299,7 @@ export async function POST(req: Request) {
         } catch (e) {
             console.error("Chat Process Error:", e);
             return createStreamResponse("I tried to process this email but encountered an error.");
-        }
+       }
     }
 
     // ⚡ SHORTCUT 4: Meeting Intent

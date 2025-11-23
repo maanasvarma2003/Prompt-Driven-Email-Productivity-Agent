@@ -12,7 +12,7 @@ const DraftSchema = z.object({
 export async function POST(req: Request) {
   try {
     const bodyJson = await req.json();
-    const { emailId, instruction } = bodyJson; 
+    const { emailId, instruction } = bodyJson;
     const email = db.getEmail(emailId);
 
     if (!email) return NextResponse.json({ error: 'Email not found' }, { status: 404 });

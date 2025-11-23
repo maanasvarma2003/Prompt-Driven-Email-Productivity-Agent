@@ -1,9 +1,70 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { Send, Bot, Sparkles, Edit, User, Paperclip, AlertCircle, Volume2, StopCircle, X, File } from 'lucide-react';
+import { Send, Bot, Sparkles, Edit, User, Paperclip, AlertCircle, Volume2, StopCircle, X, File, Loader2, CheckCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+
+function ChatDraftActions({ draftId }: { draftId: string }) {
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [isSending, setIsSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setAttachments(prev => [...prev, ...Array.from(e.target.files!)]);
+    }
+  };
+
+  const handleSend = async () => {
+    setIsSending(true);
+    try {
+        await fetch('/api/send', {
+            method: 'POST',
+            body: JSON.stringify({ 
+                draftId, 
+                attachments: attachments.map(f => ({ name: f.name, size: f.size, type: f.type }))
+            })
+        });
+        setSent(true);
+    } catch (e) {
+        alert("Failed to send");
+    } finally {
+        setIsSending(false);
+    }
+  };
+
+  if (sent) return <div className="mt-2 text-emerald-600 text-xs font-bold flex items-center gap-2 p-2 bg-emerald-50 rounded-lg border border-emerald-100"><CheckCircle className="w-3.5 h-3.5"/> Email Sent Successfully</div>;
+
+  return (
+    <div className="mt-3 p-3 bg-white rounded-xl border border-indigo-100 shadow-sm animate-in slide-in-from-top-2">
+       {/* Attachments List */}
+       {attachments.length > 0 && (
+         <div className="flex flex-wrap gap-2 mb-3">
+            {attachments.map((f, i) => (
+                <div key={i} className="text-[10px] bg-slate-100 px-2 py-1 rounded flex items-center gap-1 border border-slate-200 text-slate-700">
+                    <span className="truncate max-w-[100px]">{f.name}</span> 
+                    <button onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))} className="hover:text-red-500"><X className="w-3 h-3"/></button>
+                </div>
+            ))}
+         </div>
+       )}
+       
+       <div className="flex justify-between items-center">
+         <div className="flex items-center gap-2">
+            <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileChange} />
+            <button onClick={() => fileInputRef.current?.click()} className="text-xs flex items-center gap-1 text-slate-500 hover:text-indigo-600 font-medium px-2 py-1 hover:bg-slate-50 rounded-lg transition-colors">
+                <Paperclip className="w-3.5 h-3.5" /> Attach Files
+            </button>
+         </div>
+         <button onClick={handleSend} disabled={isSending} className="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-indigo-700 disabled:opacity-50 font-bold shadow-sm shadow-indigo-200">
+            {isSending ? <Loader2 className="w-3 h-3 animate-spin"/> : <Send className="w-3 h-3"/>} Send Now
+         </button>
+       </div>
+    </div>
+  );
+}
 
 interface AgentChatProps {
   contextEmailId: string | null;
@@ -168,8 +229,13 @@ export function AgentChat({ contextEmailId }: AgentChatProps) {
                      strong: ({node, ...props}) => <span className="font-bold text-slate-900" {...props} />,
                    }}
                  >
-                   {m.content}
+                   {m.content.replace(/<!-- DRAFT_ID:(.*?) -->/, '')}
                  </ReactMarkdown>
+
+                 {/* Render Action Card if Draft ID found */}
+                 {m.content.includes('<!-- DRAFT_ID:') && (
+                    <ChatDraftActions draftId={m.content.match(/<!-- DRAFT_ID:(.*?) -->/)?.[1] || ''} />
+                 )}
                </div>
                
                {/* Tool Results */}

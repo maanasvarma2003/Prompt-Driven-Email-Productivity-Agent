@@ -71,6 +71,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
 
       if (data.subject && data.body) {
         setGeneratedDraft(data);
+        mutate('/api/drafts'); // Refresh drafts list immediately
       } else {
         throw new Error("Invalid draft response from server");
       }
@@ -374,37 +375,36 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
                                     </div>
                                 ))}
                             </div>
-                            
-                            <div className="flex items-center gap-2">
-                                <input 
-                                    type="file" 
-                                    multiple 
-                                    className="hidden" 
-                                    ref={fileInputRef} 
-                                    onChange={handleFileChange} 
-                                />
-                                <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors"
-                                >
-                                    <Paperclip className="w-3.5 h-3.5" />
-                                    Attach Files
-                                </button>
-                            </div>
                         </div>
 
                         {/* Trust Ledger Integration */}
                         <TrustLedger />
                     </div>
-                    <div className="mt-3 flex justify-end">
-                    <button 
-                        onClick={handleSend}
-                        disabled={isSending}
-                        className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 shadow-sm transition-colors flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                        {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                        {isSending ? 'Sending...' : 'Send Now'}
-                    </button>
+                    <div className="mt-3 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <input 
+                                type="file" 
+                                multiple 
+                                className="hidden" 
+                                ref={fileInputRef} 
+                                onChange={handleFileChange} 
+                            />
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors"
+                            >
+                                <Paperclip className="w-4 h-4" />
+                                Attach Files
+                            </button>
+                        </div>
+                        <button 
+                            onClick={handleSend}
+                            disabled={isSending}
+                            className="px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 shadow-sm transition-colors flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                            {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                            {isSending ? 'Sending...' : 'Send Now'}
+                        </button>
                     </div>
                 </>
              )}
