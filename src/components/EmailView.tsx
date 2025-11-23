@@ -3,6 +3,8 @@
 import { Email } from "@/types";
 import { Loader2, Zap, CheckSquare, Calendar, Flag, User, AlertTriangle, PenTool, Mail, Mic, MessageSquare, Users, BrainCircuit } from "lucide-react";
 import { useState, useEffect } from "react";
+import WarRoom from "./WarRoom";
+import TrustLedger from "./TrustLedger";
 
 interface EmailViewProps {
   email: Email | null;
@@ -16,6 +18,9 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
   const [generatedDraft, setGeneratedDraft] = useState<{ subject: string; body: string; swarmAnalysis?: string } | null>(null);
   const [smartChips, setSmartChips] = useState<string[]>([]);
   const [isListening, setIsListening] = useState(false);
+  
+  // War Room State
+  const [showWarRoom, setShowWarRoom] = useState(false);
 
   // Reset local state when email changes
   useEffect(() => {
@@ -23,6 +28,7 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
     setIsDrafting(false);
     setIsSwarmDrafting(false);
     setSmartChips([]);
+    setShowWarRoom(false);
     if (email) {
        // Fetch Smart Chips
        fetch('/api/chips', { method: 'POST', body: JSON.stringify({ emailId: email.id }) })
@@ -287,9 +293,17 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
                  <Mail className="w-4 h-4 text-indigo-500" />
                  Auto-Generated Reply
                </h3>
-               <button className="text-xs bg-white px-3 py-1 rounded border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors">
-                 Copy Text
-               </button>
+               <div className="flex gap-2">
+                  <button 
+                    onClick={() => setShowWarRoom(true)}
+                    className="text-xs bg-purple-100 px-3 py-1 rounded border border-purple-200 text-purple-700 hover:bg-purple-200 transition-colors font-bold flex items-center gap-1"
+                  >
+                    🔮 WAR ROOM
+                  </button>
+                  <button className="text-xs bg-white px-3 py-1 rounded border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors">
+                    Copy Text
+                  </button>
+               </div>
              </div>
              <div className="bg-white rounded-xl border border-indigo-100 p-4 shadow-sm">
                 <div className="mb-2 text-sm font-semibold text-slate-800 border-b border-slate-100 pb-2">
@@ -307,6 +321,9 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
                         {generatedDraft.swarmAnalysis}
                     </div>
                 )}
+
+                {/* Trust Ledger Integration */}
+                <TrustLedger />
              </div>
              <div className="mt-3 flex justify-end">
                <button className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 shadow-sm transition-colors">
@@ -409,6 +426,15 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
           </div>
         </div>
       </div>
+
+      {/* War Room Modal */}
+      {showWarRoom && generatedDraft && (
+        <WarRoom 
+          draft={generatedDraft.body}
+          recipientProfile={email.senderProfile ? JSON.stringify(email.senderProfile) : "Unknown Profile"}
+          onClose={() => setShowWarRoom(false)}
+        />
+      )}
     </div>
   );
 }

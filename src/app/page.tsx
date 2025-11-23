@@ -9,10 +9,12 @@ import { PromptModal } from "@/components/PromptModal";
 import { Dashboard } from "@/components/Dashboard";
 import { DraftsList } from "@/components/DraftsList";
 import { SentList } from "@/components/SentList";
-import { Settings, RefreshCcw, LayoutDashboard, Inbox as InboxIcon, Bot, FileText, Leaf, Send, Zap, Layers, Share2, Sparkles } from "lucide-react";
+import { Settings, RefreshCcw, LayoutDashboard, Inbox as InboxIcon, Bot, FileText, Leaf, Send, Zap, Layers, Share2, Sparkles, Dna, Video } from "lucide-react";
 import { Email, Draft, SentEmail } from "@/types";
 import { FocusMode } from "@/components/FocusMode";
 import { predictNextEmail } from "@/lib/precog";
+import DigitalDNA from "@/components/DigitalDNA";
+import VideoStudio from "@/components/VideoStudio";
 import dynamic from 'next/dynamic';
 
 const NetworkView = dynamic(() => import('@/components/NetworkView').then(mod => mod.NetworkView), { 
@@ -26,7 +28,7 @@ const NetworkView = dynamic(() => import('@/components/NetworkView').then(mod =>
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-type View = 'dashboard' | 'inbox' | 'agent' | 'drafts' | 'sent' | 'focus' | 'network';
+type View = 'dashboard' | 'inbox' | 'agent' | 'drafts' | 'sent' | 'focus' | 'network' | 'dna' | 'video';
 
 export default function Home() {
   return (
@@ -197,6 +199,12 @@ function AppShell() {
                     <NavItem view="sent" icon={Send} label="Sent" />
                 </div>
 
+                <div className="space-y-1">
+                    <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Futurist Labs</p>
+                    <NavItem view="dna" icon={Dna} label="Digital DNA" />
+                    <NavItem view="video" icon={Video} label="Avatar Studio" />
+                </div>
+
             </div>
         </div>
 
@@ -293,6 +301,22 @@ function AppShell() {
             <div className="h-full w-full animate-in fade-in duration-500">
                 <NetworkView emails={emails || []} />
             </div>
+        )}
+
+        {currentView === 'dna' && (
+            <div className="h-full w-full p-10 flex items-center justify-center bg-gradient-to-br from-zinc-900 to-black">
+                <div className="w-full max-w-3xl">
+                   <DigitalDNA />
+                </div>
+            </div>
+        )}
+
+        {currentView === 'video' && (
+             <div className="h-full w-full p-10 flex items-center justify-center bg-gradient-to-br from-zinc-900 to-black">
+                <div className="w-full max-w-2xl h-[600px]">
+                   <VideoStudio />
+                </div>
+             </div>
         )}
       </div>
 
