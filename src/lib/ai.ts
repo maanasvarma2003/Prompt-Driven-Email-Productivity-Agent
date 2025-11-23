@@ -1,4 +1,11 @@
-import { groq } from './groq';
+import { createOpenAI } from '@ai-sdk/openai';
+
+// Create a custom OpenAI provider instance for Groq
+export const groq = createOpenAI({
+  baseURL: 'https://api.groq.com/openai/v1',
+  // prioritized: env var > hardcoded key (user provided)
+  apiKey: process.env.GROQ_API_KEY || "", 
+});
 
 // --- HYBRID MODEL ARCHITECTURE ---
 // We use Groq's LPU to achieve millisecond inference speeds.

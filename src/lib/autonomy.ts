@@ -46,11 +46,13 @@ export async function runAutopilotCheck(
       mode: 'smart',
       prompt: prompt,
     });
+    
+    // Explicitly cast object to the inferred schema type to avoid 'unknown' error
+    const typedObject = object as z.infer<typeof AutonomyDecisionSchema>;
 
-    return object.actions;
+    return typedObject.actions;
   } catch (error) {
     console.error('Autopilot Failed:', error);
     return [];
   }
 }
-

@@ -59,7 +59,8 @@ export async function runWarRoomSimulation(
       temperature: 0.4, // Allow for some variance in simulation
     });
 
-    return object;
+    // Explicitly cast object to avoid unknown type errors in strict mode
+    return object as z.infer<typeof WarRoomReportSchema>;
   } catch (error) {
     console.error('War Room Simulation Failed:', error);
     // Fallback mock response
@@ -71,4 +72,3 @@ export async function runWarRoomSimulation(
     };
   }
 }
-
