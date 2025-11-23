@@ -96,7 +96,7 @@ export async function processEmail(emailId: string) {
                     
                     Output JSON only.
                     1. Category: Important, To-Do, Newsletter, Spam, or Uncategorized.
-                    2. Summary: Write a simple, human-like summary. No word limit, just make it easy to understand. Speak naturally.
+                    2. Summary: Write a natural, human-like summary. There is NO word limit. Focus on clarity and ease of understanding. It should sound like a helpful assistant briefing the user.
                     3. Sentiment: Detect tone.
                     4. KeyEntities: Extract important names.
                     5. ActionItems: strict list of tasks.

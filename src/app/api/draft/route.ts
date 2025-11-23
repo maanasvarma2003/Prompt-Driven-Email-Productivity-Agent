@@ -49,8 +49,10 @@ export async function POST(req: Request) {
               User Instruction: "${instruction || "Reply appropriately."}"
               
               GUIDELINES:
-              1. Mimic the User Style DNA exactly (tone, signature).
-              2. Be concise and professional.
+              1. UNIQUE CONTENT: Do NOT use generic templates. Every reply MUST be 100% custom to this specific email content. Reference specific details, dates, names, and questions asked.
+              2. NATURAL TONE: Mimic the User Style DNA exactly (tone, signature). Speak like a human, not a robot.
+              3. NO WORD LIMIT: Write as much or as little as necessary to be effective and polite. Prioritize clarity and warmth.
+              4. RELEVANCE: Address every point raised in the email directly.
             `,
             temperature: 0.3, 
          });
