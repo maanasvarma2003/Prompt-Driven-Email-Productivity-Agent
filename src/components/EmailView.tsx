@@ -3,32 +3,28 @@
 import { Email } from "@/types";
 import { Loader2, Zap, CheckSquare, Calendar, Flag, User, AlertTriangle, PenTool, Mail, Mic, MessageSquare, Users, BrainCircuit } from "lucide-react";
 import { useState, useEffect } from "react";
-import WarRoom from "./WarRoom";
 import TrustLedger from "./TrustLedger";
 
 interface EmailViewProps {
   email: Email | null;
   onProcess: (id: string) => Promise<void>;
   isProcessing: boolean;
+  onOpenWarRoom?: (draft: string, profile: string) => void; // New prop
 }
 
-export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
+export function EmailView({ email, onProcess, isProcessing, onOpenWarRoom }: EmailViewProps) {
   const [isDrafting, setIsDrafting] = useState(false);
   const [isSwarmDrafting, setIsSwarmDrafting] = useState(false);
   const [generatedDraft, setGeneratedDraft] = useState<{ subject: string; body: string; swarmAnalysis?: string } | null>(null);
   const [smartChips, setSmartChips] = useState<string[]>([]);
   const [isListening, setIsListening] = useState(false);
   
-  // War Room State
-  const [showWarRoom, setShowWarRoom] = useState(false);
-
   // Reset local state when email changes
   useEffect(() => {
     setGeneratedDraft(null);
     setIsDrafting(false);
     setIsSwarmDrafting(false);
     setSmartChips([]);
-    setShowWarRoom(false);
     if (email) {
        // Fetch Smart Chips
        fetch('/api/chips', { method: 'POST', body: JSON.stringify({ emailId: email.id }) })
@@ -295,7 +291,7 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
                </h3>
                <div className="flex gap-2">
                   <button 
-                    onClick={() => setShowWarRoom(true)}
+                    onClick={() => onOpenWarRoom?.(generatedDraft.body, email.senderProfile ? JSON.stringify(email.senderProfile) : "Unknown Profile")}
                     className="text-xs bg-purple-100 px-3 py-1 rounded border border-purple-200 text-purple-700 hover:bg-purple-200 transition-colors font-bold flex items-center gap-1"
                   >
                     🔮 WAR ROOM
@@ -426,15 +422,6 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
           </div>
         </div>
       </div>
-
-      {/* War Room Modal */}
-      {showWarRoom && generatedDraft && (
-        <WarRoom 
-          draft={generatedDraft.body}
-          recipientProfile={email.senderProfile ? JSON.stringify(email.senderProfile) : "Unknown Profile"}
-          onClose={() => setShowWarRoom(false)}
-        />
-      )}
     </div>
   );
 }

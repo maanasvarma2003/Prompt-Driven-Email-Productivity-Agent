@@ -15,6 +15,7 @@ import { FocusMode } from "@/components/FocusMode";
 import { predictNextEmail } from "@/lib/precog";
 import DigitalDNA from "@/components/DigitalDNA";
 import VideoStudio from "@/components/VideoStudio";
+import WarRoom from "@/components/WarRoom";
 import dynamic from 'next/dynamic';
 
 const NetworkView = dynamic(() => import('@/components/NetworkView').then(mod => mod.NetworkView), { 
@@ -57,6 +58,9 @@ function AppShell() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [prediction, setPrediction] = useState<any>(null);
+  
+  // War Room State Management
+  const [warRoomData, setWarRoomData] = useState<{ draft: string; profile: string } | null>(null);
 
   // Run Pre-Cog Engine
   useEffect(() => {
@@ -263,6 +267,7 @@ function AppShell() {
                 email={selectedEmail} 
                 onProcess={handleProcess}
                 isProcessing={processingId === selectedId}
+                onOpenWarRoom={(draft, profile) => setWarRoomData({ draft, profile })}
               />
             </div>
           </div>
@@ -319,6 +324,15 @@ function AppShell() {
              </div>
         )}
       </div>
+
+      {/* Global War Room Modal - Rendered at root level to ensure z-index dominance */}
+      {warRoomData && (
+        <WarRoom 
+          draft={warRoomData.draft}
+          recipientProfile={warRoomData.profile}
+          onClose={() => setWarRoomData(null)}
+        />
+      )}
 
       {/* Settings Modal */}
       <PromptModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
