@@ -7,7 +7,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const updated = db.updateDraft(id, {
     subject: body.subject,
-    body: body.body
+    body: body.body,
+    attachments: body.attachments
   });
 
   if (!updated) {
