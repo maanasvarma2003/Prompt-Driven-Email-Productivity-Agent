@@ -1,7 +1,7 @@
 'use client';
 
 import { Email } from "@/types";
-import { Loader2, Zap, Calendar, Flag, PenTool, Mail, Mic, MessageSquare, Users, BrainCircuit, ChevronLeft, Send, CheckCircle } from "lucide-react";
+import { Loader2, Zap, Calendar, Flag, PenTool, Mail, Mic, MessageSquare, BrainCircuit, ChevronLeft, Send, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { mutate } from "swr";
 import TrustLedger from "./TrustLedger";
@@ -16,8 +16,7 @@ interface EmailViewProps {
 
 export function EmailView({ email, onProcess, isProcessing, onBack, className = '' }: EmailViewProps) {
   const [isDrafting, setIsDrafting] = useState(false);
-  const [isSwarmDrafting, setIsSwarmDrafting] = useState(false);
-  const [generatedDraft, setGeneratedDraft] = useState<{ id: string; subject: string; body: string; swarmAnalysis?: string } | null>(null);
+  const [generatedDraft, setGeneratedDraft] = useState<{ id: string; subject: string; body: string } | null>(null);
   const [smartChips, setSmartChips] = useState<string[]>([]);
   const [isListening, setIsListening] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -27,7 +26,6 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
   useEffect(() => {
     setGeneratedDraft(null);
     setIsDrafting(false);
-    setIsSwarmDrafting(false);
     setSmartChips([]);
     setSendSuccess(false);
     if (email) {
@@ -38,10 +36,9 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
     }
   }, [email?.id]);
 
-  const handleDraft = async (instruction?: string, mode: 'standard' | 'swarm' = 'standard') => {
+  const handleDraft = async (instruction?: string) => {
     if (!email) return;
-    if (mode === 'swarm') setIsSwarmDrafting(true);
-    else setIsDrafting(true);
+    setIsDrafting(true);
     
     setGeneratedDraft(null); // Clear previous draft
     setSendSuccess(false);
@@ -50,7 +47,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
       const res = await fetch('/api/draft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emailId: email.id, instruction, mode }),
+        body: JSON.stringify({ emailId: email.id, instruction }),
       });
       
       const data = await res.json();
@@ -69,7 +66,6 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
       alert(`Error generating draft: ${e.message}`);
     } finally {
       setIsDrafting(false);
-      setIsSwarmDrafting(false);
     }
   };
 
@@ -143,13 +139,11 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
         const cleanTranscript = transcript.toLowerCase().trim();
         
         // 1. Empty Intent Detection: Commands that mean "Just Draft"
-        // If the user says ONLY these phrases (fuzzy match), we send NO instruction (auto-mode)
         const emptyIntents = [
             'draft a reply', 'draft reply', 'reply to this email', 'reply to email', 
             'write a reply', 'write reply', 'reply', 'draft', 'respond'
         ];
 
-        // Check if transcript is basically just one of these commands
         const isEmptyIntent = emptyIntents.some(intent => 
             cleanTranscript === intent || 
             cleanTranscript === intent + '.' ||
@@ -163,7 +157,6 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
         }
 
         // 2. Command Parsing: Strip prefix "Reply saying..."
-        // If it's not empty, we try to strip the command part
         const commandPrefixes = [
             'draft a reply saying', 'reply saying', 'write a reply saying', 
             'reply that', 'tell him that', 'tell her that', 'tell them that', 
@@ -175,27 +168,17 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
 
         for (const prefix of commandPrefixes) {
             if (cleanTranscript.startsWith(prefix)) {
-                // Slice off the prefix from the ORIGINAL transcript (to preserve case of the message)
-                // +1 for potential space
                 finalInstruction = transcript.slice(prefix.length).trim();
                 matchedPrefix = true;
                 break;
             }
         }
 
-        // If we didn't match a specific "saying" prefix but it contains "draft" or "reply",
-        // we fall back to the old "strip keywords" method but be more careful.
         if (!matchedPrefix && (cleanTranscript.includes('draft') || cleanTranscript.includes('reply'))) {
-             // If it's a complex sentence like "I want you to draft a reply about X",
-             // we might just pass it as is, OR try to clean it.
-             // User complaint: "replies are like draft a reply".
-             // So we MUST strip the command words if they appear at start.
-             
              const fallbackRegex = /^(draft a reply|reply to this email|reply|write a response|draft)( to this email)?( saying| that)?/i;
              finalInstruction = transcript.replace(fallbackRegex, '').trim();
         }
 
-        // Final Check: If after cleaning we have very little text, ignore or treat as empty
         if (finalInstruction.length < 3) {
              handleDraft(undefined);
         } else {
@@ -266,25 +249,15 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
 
              {/* Draft Button */}
              <button
-               onClick={() => handleDraft(undefined, 'standard')}
+               onClick={() => handleDraft()}
                onMouseEnter={() => {
                   console.log("🔮 Speculative Drafting triggered on hover...");
                }}
-               disabled={isDrafting || isSwarmDrafting}
+               disabled={isDrafting}
                className="shrink-0 flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 rounded-lg disabled:opacity-50 transition-all text-xs font-semibold shadow-sm"
              >
                {isDrafting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PenTool className="w-3.5 h-3.5" />}
                Draft
-             </button>
-
-             {/* Swarm Button */}
-             <button
-               onClick={() => handleDraft(undefined, 'swarm')}
-               disabled={isDrafting || isSwarmDrafting}
-               className="shrink-0 flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg disabled:opacity-50 transition-all text-xs font-semibold shadow-sm"
-             >
-               {isSwarmDrafting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Users className="w-3.5 h-3.5" />}
-               Swarm
              </button>
 
             {/* Process Button */}
@@ -359,15 +332,6 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
                         <div className="whitespace-pre-wrap text-slate-600 text-sm leading-relaxed font-mono">
                         {generatedDraft.body}
                         </div>
-                        
-                        {generatedDraft.swarmAnalysis && (
-                            <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 font-mono whitespace-pre-wrap">
-                                <div className="font-bold text-slate-800 mb-2 flex items-center gap-2">
-                                    <Users className="w-3 h-3" /> Swarm Intelligence Log
-                                </div>
-                                {generatedDraft.swarmAnalysis}
-                            </div>
-                        )}
 
                         {/* Trust Ledger Integration */}
                         <TrustLedger />

@@ -35,7 +35,6 @@ export interface Draft {
   subject: string;
   body: string;
   followUpSuggestions?: string[];
-  swarmAnalysis?: string; // Log from Swarm Intelligence
   createdAt: string;
 }
 
