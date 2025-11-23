@@ -1,7 +1,7 @@
 'use client';
 
 import { Email } from "@/types";
-import { Loader2, Zap, CheckSquare, Calendar, Flag, User, AlertTriangle, PenTool, Mail, Mic, MessageSquare, Users, BrainCircuit } from "lucide-react";
+import { Loader2, Zap, Calendar, Flag, PenTool, Mail, Mic, MessageSquare, Users, BrainCircuit, ChevronLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import TrustLedger from "./TrustLedger";
 
@@ -9,9 +9,11 @@ interface EmailViewProps {
   email: Email | null;
   onProcess: (id: string) => Promise<void>;
   isProcessing: boolean;
+  onBack?: () => void; // New prop for mobile back navigation
+  className?: string; // Add className for visibility toggling
 }
 
-export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
+export function EmailView({ email, onProcess, isProcessing, onBack, className = '' }: EmailViewProps) {
   const [isDrafting, setIsDrafting] = useState(false);
   const [isSwarmDrafting, setIsSwarmDrafting] = useState(false);
   const [generatedDraft, setGeneratedDraft] = useState<{ subject: string; body: string; swarmAnalysis?: string } | null>(null);
@@ -173,7 +175,7 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
 
   if (!email) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50">
+      <div className={`flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 ${className}`}>
         <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
           <Zap className="w-10 h-10 text-slate-300" />
         </div>
@@ -184,12 +186,20 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-white overflow-hidden relative">
+    <div className={`flex-1 flex flex-col h-full bg-white overflow-hidden relative ${className}`}>
       {/* Sticky Header */}
-      <div className="px-6 py-4 border-b border-slate-100 bg-white/90 backdrop-blur-xl sticky top-0 z-50 shadow-sm">
+      <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-100 bg-white/90 backdrop-blur-xl sticky top-0 z-50 shadow-sm">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
-             <h1 className="text-xl font-bold text-slate-900 leading-snug mb-2 truncate" title={email.subject}>{email.subject}</h1>
+             {/* Back Button for Mobile */}
+             <div className="flex items-center gap-2 mb-2">
+                {onBack && (
+                    <button onClick={onBack} className="md:hidden p-1.5 -ml-2 rounded-full hover:bg-slate-100 text-slate-600">
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
+                )}
+                <h1 className="text-lg md:text-xl font-bold text-slate-900 leading-snug truncate" title={email.subject}>{email.subject}</h1>
+             </div>
              
              {/* Smart Chips */}
              <div className="flex gap-2 flex-wrap">
@@ -205,7 +215,7 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
              </div>
           </div>
           
-          <div className="flex items-center gap-2 shrink-0 overflow-x-auto pb-1 xl:pb-0">
+          <div className="flex items-center gap-2 shrink-0 overflow-x-auto pb-1 xl:pb-0 scrollbar-hide">
             {/* Voice Command Button */}
             <button
                onClick={handleVoiceCommand}
@@ -227,7 +237,7 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
                className="shrink-0 flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 rounded-lg disabled:opacity-50 transition-all text-xs font-semibold shadow-sm"
              >
                {isDrafting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PenTool className="w-3.5 h-3.5" />}
-               Draft Reply
+               Draft
              </button>
 
              {/* Swarm Button */}
@@ -237,7 +247,7 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
                className="shrink-0 flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg disabled:opacity-50 transition-all text-xs font-semibold shadow-sm"
              >
                {isSwarmDrafting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Users className="w-3.5 h-3.5" />}
-               Swarm Mode
+               Swarm
              </button>
 
             {/* Process Button */}
@@ -251,7 +261,7 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
                  className="shrink-0 flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-slate-900/20 hover:shadow-lg text-xs font-bold tracking-wide uppercase active:scale-95"
                >
                  {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />}
-                 Process Email
+                 Process
                </button>
              ) : (
                <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200 text-xs font-bold shadow-sm">
@@ -278,11 +288,11 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
       </div>
 
       {/* Content Scroll Area */}
-      <div className="flex-1 overflow-y-auto px-8 py-8 space-y-8">
+      <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8 space-y-8">
         
         {/* Generated Draft Card */}
         {generatedDraft && (
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-6 shadow-sm animate-in slide-in-from-top-4 duration-500">
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-4 md:p-6 shadow-sm animate-in slide-in-from-top-4 duration-500">
              <div className="flex justify-between items-center mb-4">
                <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
                  <Mail className="w-4 h-4 text-indigo-500" />
@@ -324,7 +334,7 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
 
         {/* Analysis Card */}
         {(email.category || email.actionItems?.length || email.analysis) && (
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 md:p-6 animate-in fade-in slide-in-from-top-4 duration-500">
              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
                <Zap className="w-4 h-4 text-blue-500" />
                AI Insights
@@ -344,7 +354,7 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
                     <h4 className="text-xs font-bold text-purple-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                         <BrainCircuit className="w-4 h-4" /> Psych Profile
                     </h4>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
                             <div className="text-[10px] text-purple-400 uppercase font-bold">Archetype</div>
                             <div className="font-medium text-purple-900">{email.senderProfile.archetype}</div>
@@ -357,7 +367,7 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
                 </div>
              )}
 
-             <div className="grid grid-cols-2 gap-6">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {email.category && (
                   <div>
                     <span className="text-sm text-slate-500 block mb-1">Category</span>
@@ -372,7 +382,7 @@ export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
                 )}
                 
                 {email.actionItems && email.actionItems.length > 0 && (
-                   <div className="col-span-2">
+                   <div className="col-span-1 md:col-span-2">
                       <span className="text-sm text-slate-500 block mb-2">Action Items</span>
                       <div className="space-y-2">
                         {email.actionItems.map((item, idx) => (

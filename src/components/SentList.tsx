@@ -9,7 +9,7 @@ interface SentListProps {
 
 export function SentList({ sentEmails }: SentListProps) {
   return (
-    <div className="p-8 h-full overflow-y-auto bg-slate-50/50">
+    <div className="p-4 md:p-8 h-full overflow-y-auto bg-slate-50/50">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900">Sent Mails</h1>
         <p className="text-slate-500">History of sent replies</p>
@@ -46,5 +46,3 @@ export function SentList({ sentEmails }: SentListProps) {
     </div>
   );
 }
-
-

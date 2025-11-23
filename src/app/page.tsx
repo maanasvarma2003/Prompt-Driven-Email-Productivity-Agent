@@ -9,7 +9,7 @@ import { PromptModal } from "@/components/PromptModal";
 import { Dashboard } from "@/components/Dashboard";
 import { DraftsList } from "@/components/DraftsList";
 import { SentList } from "@/components/SentList";
-import { Settings, RefreshCcw, LayoutDashboard, Inbox as InboxIcon, Bot, FileText, Leaf, Send, Zap, Layers, Share2, Sparkles } from "lucide-react";
+import { Settings, RefreshCcw, LayoutDashboard, Inbox as InboxIcon, Bot, FileText, Leaf, Send, Layers, Share2, Sparkles, Menu, X } from "lucide-react";
 import { Email, Draft, SentEmail } from "@/types";
 import { FocusMode } from "@/components/FocusMode";
 import { predictNextEmail } from "@/lib/precog";
@@ -55,6 +55,9 @@ function AppShell() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [prediction, setPrediction] = useState<any>(null);
+  
+  // Mobile Sidebar State
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Run Pre-Cog Engine
   useEffect(() => {
@@ -130,7 +133,10 @@ function AppShell() {
 
   const NavItem = ({ view, icon: Icon, label }: { view: View; icon: any; label: string }) => (
     <button
-      onClick={() => setCurrentView(view)}
+      onClick={() => {
+          setCurrentView(view);
+          setIsSidebarOpen(false); // Close sidebar on mobile when navigating
+      }}
       className={`w-full p-3 rounded-xl flex items-center gap-3 transition-all duration-200 ${
         currentView === view 
           ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20 font-semibold translate-x-1' 
@@ -138,7 +144,7 @@ function AppShell() {
       }`}
     >
       <Icon className={`w-5 h-5 ${currentView === view ? 'text-white' : ''}`} />
-      <span className="hidden md:block text-sm">{label}</span>
+      <span className="block text-sm">{label}</span>
       {currentView === view && (
          <div className="ml-auto w-1.5 h-1.5 bg-white rounded-full animate-pulse shadow-md"></div>
       )}
@@ -162,25 +168,38 @@ function AppShell() {
         </div>
       )}
 
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+            className="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-sm transition-opacity"
+            onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
+
       {/* Sidebar Navigation */}
-      <div className="w-64 bg-slate-900 flex flex-col h-full border-r border-slate-800 z-20 shadow-2xl">
+      <div className={`fixed inset-y-0 left-0 w-64 bg-slate-900 flex flex-col h-full border-r border-slate-800 z-40 shadow-2xl transform transition-transform duration-300 md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
         {/* Top Section: Brand + Nav */}
         <div className="flex-1 flex flex-col min-h-0 p-4">
             
             {/* Brand */}
-            <div className="flex items-center gap-3 px-2 py-4 mb-6 shrink-0">
-               <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-900/50 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-white/20 translate-y-full skew-y-12 group-hover:translate-y-0 transition-transform"></div>
-                  <Leaf className="w-6 h-6 text-white relative z-10" />
+            <div className="flex items-center gap-3 px-2 py-4 mb-6 shrink-0 justify-between">
+               <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-900/50 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-white/20 translate-y-full skew-y-12 group-hover:translate-y-0 transition-transform"></div>
+                      <Leaf className="w-6 h-6 text-white relative z-10" />
+                   </div>
+                   <div>
+                     <h1 className="font-bold text-white text-lg tracking-tight">MailMint AI</h1>
+                     <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                        <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Online</p>
+                     </div>
+                   </div>
                </div>
-               <div>
-                 <h1 className="font-bold text-white text-lg tracking-tight">MailMint AI</h1>
-                 <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Online</p>
-                 </div>
-               </div>
+               <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-500 hover:text-white">
+                 <X className="w-6 h-6" />
+               </button>
             </div>
 
             {/* Scrollable Nav Area */}
@@ -218,82 +237,98 @@ function AppShell() {
 
       </div>
 
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-hidden relative bg-slate-50 flex flex-col">
+        
+        {/* Mobile Header (Hamburger) - Only visible on mobile */}
+        <div className="md:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between shrink-0 sticky top-0 z-20">
+            <div className="flex items-center gap-3">
+                <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-600">
+                    <Menu className="w-6 h-6" />
+                </button>
+                <span className="font-bold text-slate-900 text-lg capitalize">{currentView}</span>
+            </div>
+            {/* You could put user avatar or other icons here */}
+        </div>
+
         {/* Pre-Cog Notification */}
         {prediction && currentView === 'dashboard' && (
-            <div className="mx-6 mt-6 mb-2 p-4 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl text-white shadow-lg animate-in slide-in-from-top-4 duration-700 flex items-center justify-between">
+            <div className="mx-4 md:mx-6 mt-6 mb-2 p-4 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl text-white shadow-lg animate-in slide-in-from-top-4 duration-700 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                   <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                   <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shrink-0">
                        <Sparkles className="w-6 h-6 text-yellow-300 animate-pulse" />
                    </div>
                    <div>
                        <div className="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Pre-Cog Engine Active</div>
-                       <h3 className="font-bold text-lg">Prediction: {prediction.recipient.split('@')[0]} needs an email.</h3>
-                       <p className="text-sm opacity-90">{prediction.reason} ({prediction.confidence}% Confidence)</p>
+                       <h3 className="font-bold text-lg leading-tight">Prediction: {prediction.recipient.split('@')[0]} needs an email.</h3>
+                       <p className="text-sm opacity-90 mt-1">{prediction.reason} ({prediction.confidence}% Confidence)</p>
                    </div>
                 </div>
-                <button className="bg-white text-indigo-600 px-4 py-2 rounded-lg font-bold text-sm hover:bg-indigo-50 transition-colors shadow-sm">
+                <button className="w-full md:w-auto bg-white text-indigo-600 px-4 py-2 rounded-lg font-bold text-sm hover:bg-indigo-50 transition-colors shadow-sm text-center">
                     Draft Now
                 </button>
             </div>
         )}
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden relative bg-slate-50">
-        {currentView === 'dashboard' && (
-          <Dashboard emails={emails || []} drafts={drafts || []} />
-        )}
+        <div className="flex-1 overflow-hidden relative h-full">
+            {currentView === 'dashboard' && (
+              <Dashboard emails={emails || []} drafts={drafts || []} />
+            )}
 
-        {currentView === 'inbox' && (
-          <div className="flex h-full animate-in fade-in duration-300">
-            <Inbox 
-              emails={emails || []} 
-              selectedId={selectedId} 
-              onSelect={setSelectedId} 
-            />
-            <div className="flex-1 flex relative shadow-xl z-0 bg-white">
-              <EmailView 
-                email={selectedEmail} 
-                onProcess={handleProcess}
-                isProcessing={processingId === selectedId}
-              />
-            </div>
-          </div>
-        )}
+            {currentView === 'inbox' && (
+              <div className="flex h-full animate-in fade-in duration-300">
+                <Inbox 
+                  emails={emails || []} 
+                  selectedId={selectedId} 
+                  onSelect={setSelectedId} 
+                  className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full md:w-80`}
+                />
+                <div className={`flex-1 flex relative shadow-xl z-0 bg-white ${!selectedId ? 'hidden md:flex' : 'flex'}`}>
+                  <EmailView 
+                    email={selectedEmail} 
+                    onProcess={handleProcess}
+                    isProcessing={processingId === selectedId}
+                    onBack={() => setSelectedId(null)}
+                    className="w-full h-full"
+                  />
+                </div>
+              </div>
+            )}
 
-        {currentView === 'agent' && (
-           <div className="h-full flex items-center justify-center p-10 animate-in zoom-in-95 duration-300">
-             <div className="w-full max-w-4xl h-full shadow-2xl rounded-2xl overflow-hidden bg-white flex border border-slate-200">
-               <div className="flex-1 flex flex-col">
-                  <AgentChat contextEmailId={null} /> 
+            {currentView === 'agent' && (
+               <div className="h-full flex items-center justify-center p-4 md:p-10 animate-in zoom-in-95 duration-300">
+                 <div className="w-full max-w-4xl h-full shadow-2xl rounded-2xl overflow-hidden bg-white flex border border-slate-200">
+                   <div className="flex-1 flex flex-col">
+                      <AgentChat contextEmailId={null} /> 
+                   </div>
+                 </div>
                </div>
-             </div>
-           </div>
-        )}
+            )}
 
-        {currentView === 'drafts' && (
-          <DraftsList drafts={drafts || []} />
-        )}
+            {currentView === 'drafts' && (
+              <DraftsList drafts={drafts || []} />
+            )}
 
-        {currentView === 'sent' && (
-          <SentList sentEmails={sentEmails || []} />
-        )}
+            {currentView === 'sent' && (
+              <SentList sentEmails={sentEmails || []} />
+            )}
 
-        {currentView === 'focus' && (
-          <FocusMode 
-            emails={emails || []} 
-            onAction={(id, action) => {
-                console.log(`Focus Action: ${action} on ${id}`);
-                // In real app, call API to archive/delete
-                mutate('/api/emails'); 
-            }} 
-          />
-        )}
+            {currentView === 'focus' && (
+              <FocusMode 
+                emails={emails || []} 
+                onAction={(id, action) => {
+                    console.log(`Focus Action: ${action} on ${id}`);
+                    mutate('/api/emails'); 
+                }} 
+              />
+            )}
 
-        {currentView === 'network' && (
-            <div className="h-full w-full animate-in fade-in duration-500">
-                <NetworkView emails={emails || []} />
-            </div>
-        )}
+            {currentView === 'network' && (
+                <div className="h-full w-full animate-in fade-in duration-500">
+                    <NetworkView emails={emails || []} />
+                </div>
+            )}
+        </div>
       </div>
 
       {/* Settings Modal */}

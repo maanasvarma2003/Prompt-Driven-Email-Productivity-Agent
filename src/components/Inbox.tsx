@@ -8,33 +8,12 @@ interface InboxProps {
   emails: Email[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  className?: string; // Add className support for visibility toggling
 }
 
-export function Inbox({ emails, selectedId, onSelect }: InboxProps) {
+export function Inbox({ emails, selectedId, onSelect, className = '' }: InboxProps) {
   const [filter, setFilter] = useState<'All' | 'Unread' | 'Important'>('All');
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Speculative Pre-Processing (Background) - DISABLED
-  /*
-  useEffect(() => {
-    if (!emails) return;
-    
-    // Identify high-value targets: Unread, Unprocessed emails
-    const candidates = emails
-        .filter(e => !e.isRead && !e.category && !e.analysis)
-        .slice(0, 5); // Limit concurrent requests
-
-    candidates.forEach(email => {
-        // Fire and forget - browser will handle the queue
-        // We use the FAST_MODEL endpoint by default now for speed
-        fetch('/api/process', {
-            method: 'POST',
-            body: JSON.stringify({ emailId: email.id }),
-            headers: { 'Content-Type': 'application/json' }
-        }).catch(err => console.log("Background pre-fetch skipped:", err));
-    });
-  }, [emails]);
-  */
 
   // Memoize filtered emails to prevent re-calculation on every render
   const filteredEmails = useMemo(() => {
@@ -95,7 +74,7 @@ export function Inbox({ emails, selectedId, onSelect }: InboxProps) {
   }, [selectedId, filteredEmails, onSelect, emails]); 
 
   return (
-    <div className="w-80 flex flex-col border-r border-slate-200 bg-white h-full shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20">
+    <div className={`w-full md:w-80 flex flex-col border-r border-slate-200 bg-white h-full shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20 ${className}`}>
       {/* Header */}
       <div className="p-4 border-b border-slate-100 bg-white/80 backdrop-blur-md shrink-0 sticky top-0 z-10">
         <div className="flex items-center gap-3 mb-4">

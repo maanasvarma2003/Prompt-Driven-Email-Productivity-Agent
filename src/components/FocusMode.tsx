@@ -29,7 +29,7 @@ export function FocusMode({ emails, onAction }: FocusModeProps) {
 
   if (!currentEmail) {
       return (
-          <div className="flex flex-col items-center justify-center h-full text-center">
+          <div className="flex flex-col items-center justify-center h-full text-center p-6">
               <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mb-6 animate-bounce">
                   <Check className="w-10 h-10 text-emerald-600" />
               </div>
@@ -40,7 +40,7 @@ export function FocusMode({ emails, onAction }: FocusModeProps) {
   }
 
   return (
-    <div className="h-full flex flex-col items-center justify-center bg-slate-50 overflow-hidden relative p-6">
+    <div className="h-full flex flex-col items-center justify-center bg-slate-50 overflow-hidden relative p-4 md:p-6">
        <div className="absolute top-10 text-slate-400 font-medium uppercase tracking-widest text-xs">Focus Mode</div>
        
        <AnimatePresence>
@@ -58,30 +58,30 @@ export function FocusMode({ emails, onAction }: FocusModeProps) {
             }}
             className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden cursor-grab active:cursor-grabbing"
          >
-            <div className="p-8">
-                <div className="flex justify-between items-start mb-6">
+            <div className="p-6 md:p-8">
+                <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-2">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 mb-2">{currentEmail.subject}</h1>
-                        <div className="flex items-center gap-2 text-slate-500">
+                        <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-2">{currentEmail.subject}</h1>
+                        <div className="flex items-center gap-2 text-slate-500 text-sm md:text-base">
                             <span className="font-medium text-indigo-600">{currentEmail.sender}</span>
                             <span>•</span>
                             <span>{new Date(currentEmail.timestamp).toLocaleDateString()}</span>
                         </div>
                     </div>
                     {currentEmail.category && (
-                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold uppercase tracking-wide">
+                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold uppercase tracking-wide shrink-0">
                             {currentEmail.category}
                         </span>
                     )}
                 </div>
                 
                 <div className="prose prose-slate max-w-none">
-                    <p className="text-lg leading-relaxed text-slate-700">{currentEmail.body}</p>
+                    <p className="text-base md:text-lg leading-relaxed text-slate-700">{currentEmail.body}</p>
                 </div>
             </div>
             
             {/* Controls Hint */}
-            <div className="bg-slate-50 p-4 border-t border-slate-100 flex justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <div className="bg-slate-50 p-4 border-t border-slate-100 flex justify-between text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">
                 <div className="flex items-center gap-1"><X className="w-4 h-4 text-rose-400" /> Delete (Left)</div>
                 <div className="flex items-center gap-1"><Clock className="w-4 h-4 text-blue-400" /> Later (Up)</div>
                 <div className="flex items-center gap-1 text-emerald-600"><Archive className="w-4 h-4" /> Archive (Right)</div>
@@ -90,13 +90,11 @@ export function FocusMode({ emails, onAction }: FocusModeProps) {
        </AnimatePresence>
        
        {/* Action Buttons for Click */}
-       <div className="flex gap-6 mt-8">
-           <button onClick={() => handleSwipe('left')} className="p-4 bg-white rounded-full shadow-lg text-rose-500 hover:bg-rose-50 transition-colors"><X className="w-8 h-8" /></button>
-           <button onClick={() => handleSwipe('up')} className="p-4 bg-white rounded-full shadow-lg text-blue-500 hover:bg-blue-50 transition-colors"><Clock className="w-8 h-8" /></button>
-           <button onClick={() => handleSwipe('right')} className="p-4 bg-white rounded-full shadow-lg text-emerald-500 hover:bg-emerald-50 transition-colors"><Archive className="w-8 h-8" /></button>
+       <div className="flex gap-4 md:gap-6 mt-8">
+           <button onClick={() => handleSwipe('left')} className="p-3 md:p-4 bg-white rounded-full shadow-lg text-rose-500 hover:bg-rose-50 transition-colors"><X className="w-6 h-6 md:w-8 md:h-8" /></button>
+           <button onClick={() => handleSwipe('up')} className="p-3 md:p-4 bg-white rounded-full shadow-lg text-blue-500 hover:bg-blue-50 transition-colors"><Clock className="w-6 h-6 md:w-8 md:h-8" /></button>
+           <button onClick={() => handleSwipe('right')} className="p-3 md:p-4 bg-white rounded-full shadow-lg text-emerald-500 hover:bg-emerald-50 transition-colors"><Archive className="w-6 h-6 md:w-8 md:h-8" /></button>
        </div>
     </div>
   );
 }
-
-

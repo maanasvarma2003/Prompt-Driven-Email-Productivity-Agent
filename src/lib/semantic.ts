@@ -48,3 +48,6 @@ export function semanticSearch(query: string, emails: Email[], limit = 5): Email
 }
 
 
+
+
+

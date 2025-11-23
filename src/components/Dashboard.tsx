@@ -35,14 +35,14 @@ export function Dashboard({ emails, drafts = [] }: DashboardProps) {
   }, [emails]);
 
   return (
-    <div className="p-8 h-full overflow-y-auto bg-slate-50/50">
+    <div className="p-4 md:p-8 h-full overflow-y-auto bg-slate-50/50">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
         <p className="text-slate-500">Overview of your inbox activity</p>
       </div>
 
       {/* Top Stats Cards */}
-      <div className="grid grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-8">
         {[
           { label: 'Total Emails', value: stats.totalEmails, icon: Mail, color: 'bg-blue-500' },
           { label: 'Action Items', value: stats.pending, icon: CheckCircle, color: 'bg-orange-500' },
@@ -68,7 +68,7 @@ export function Dashboard({ emails, drafts = [] }: DashboardProps) {
       </div>
 
       {/* Charts Row 1 */}
-      <div className="grid grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Category Distribution */}
         <motion.div 
            initial={{ opacity: 0, scale: 0.95 }}
@@ -76,7 +76,7 @@ export function Dashboard({ emails, drafts = [] }: DashboardProps) {
            className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"
         >
           <h3 className="font-bold text-slate-800 mb-6">Email Categories</h3>
-          <div className="h-[300px] flex items-center justify-center">
+          <div className="h-[300px] flex flex-col md:flex-row items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -97,9 +97,9 @@ export function Dashboard({ emails, drafts = [] }: DashboardProps) {
                 />
               </PieChart>
             </ResponsiveContainer>
-            <div className="space-y-2 ml-8">
+            <div className="space-y-2 mt-4 md:mt-0 md:ml-8 w-full md:w-auto">
               {stats.categoryData.map((entry, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm">
+                <div key={i} className="flex items-center gap-2 text-sm justify-center md:justify-start">
                   <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: entry.color }}></div>
                   <span className="text-slate-600 font-medium">{entry.name}: {entry.value}</span>
                 </div>
