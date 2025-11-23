@@ -22,7 +22,10 @@ async function runAgent(persona: string, emailContext: string) {
             TASK: Draft a reply to this email.
             CONTEXT: ${emailContext}
             
-            Explain your reasoning briefly.
+            GUIDELINES:
+            1. No length limits. Write as much as needed to be effective.
+            2. Stick to your persona strictly.
+            3. Explain your reasoning.
         `
     });
     return result.object as z.infer<typeof SwarmSchema>;
@@ -33,9 +36,9 @@ export async function runSwarm(emailContext: string) {
     
     // 1. Parallel Execution
     const [skeptic, optimist, strategist] = await Promise.all([
-        runAgent("The Skeptic: Cautious, legalistic, protective. Asks for clarification.", emailContext),
-        runAgent("The Optimist: Friendly, enthusiastic, sales-driven. Says yes.", emailContext),
-        runAgent("The Strategist: Efficient, data-driven, long-term thinker.", emailContext)
+        runAgent("The Skeptic: Cautious, legalistic, protective. Detailed risk assessment.", emailContext),
+        runAgent("The Optimist: Friendly, enthusiastic, sales-driven. Relationship building focus.", emailContext),
+        runAgent("The Strategist: Efficient, data-driven, long-term thinker. Comprehensive planning.", emailContext)
     ]);
 
     console.log("🐝 Swarm Generated 3 Candidates.");
@@ -52,15 +55,21 @@ export async function runSwarm(emailContext: string) {
         prompt: `
             You are the Chief of Staff. Three of your specialized agents have proposed replies to an email.
             
-            Email Context: ${emailContext.substring(0, 500)}...
+            Email Context: ${emailContext.substring(0, 1000)}...
             
             Proposal 1 (Skeptic): ${skeptic.body} (Reason: ${skeptic.reasoning})
             Proposal 2 (Optimist): ${optimist.body} (Reason: ${optimist.reasoning})
             Proposal 3 (Strategist): ${strategist.body} (Reason: ${strategist.reasoning})
             
-            TASK: Create the FINAL PERFECT DRAFT.
-            - You may choose one winner OR merge the best parts of all three.
-            - Ensure tone is professional and balanced.
+            TASK: Create the FINAL COMPREHENSIVE STRATEGIC DRAFT.
+            
+            GUIDELINES:
+            1. Unrestricted Length: Do not limit yourself. Cover all necessary ground.
+            2. Synthesis: Merge the best strategic points from all three proposals.
+            3. Distinctiveness: This must NOT look like a generic rapid reply. It should feel researched and weighed.
+            4. Structure: You can use bullet points or multiple paragraphs if helpful.
+            
+            Rationale: Explain exactly why this synthesized version is superior.
         `
     });
 
@@ -78,4 +87,3 @@ export async function runSwarm(emailContext: string) {
         `
     };
 }
-

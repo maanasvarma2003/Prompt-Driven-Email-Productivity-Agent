@@ -7,7 +7,7 @@ import nlp from 'compromise';
 // Schema for LLM analysis
 const AnalysisSchema = z.object({
   category: z.enum(['Important', 'To-Do', 'Newsletter', 'Spam', 'Uncategorized']),
-  summary: z.string().describe("A natural, conversational summary of the email (as if spoken by a human assistant)."),
+  summary: z.string().describe("A natural, conversational summary of the email (as if spoken by a human assistant). No length limit."),
   sentiment: z.enum(['Positive', 'Neutral', 'Negative', 'Urgent']).describe("The emotional tone or urgency of the email."),
   keyEntities: z.array(z.string()).describe("List of key people, organizations, or topics mentioned."),
   actionItems: z.array(z.object({
@@ -97,7 +97,7 @@ export async function processEmail(emailId: string) {
                     
                     Output JSON only.
                     1. Category: Important, To-Do, Newsletter, Spam, or Uncategorized.
-                    2. Summary: Write a perfect, natural, and precise summary.
+                    2. Summary: Write a simple, human-like summary. No word limit, just make it easy to understand. Speak naturally.
                     3. Sentiment: Detect tone.
                     4. KeyEntities: Extract important names.
                     5. ActionItems: strict list of tasks.
@@ -169,4 +169,3 @@ export async function processEmail(emailId: string) {
     
     return updatedEmail;
 }
-
