@@ -12,19 +12,19 @@ interface ToolOutput {
     data?: any;
 }
 
-export const TOOLS = {
+export const TOOLS: Record<ToolName, { description: string, execute: (params: any) => Promise<ToolOutput> }> = {
     calendar_add: {
         description: "Add an event to Google Calendar. Params: title, time, date.",
         execute: async (params: any): Promise<ToolOutput> => {
             console.log("📅 Tool Executed: Calendar Add", params);
-            return { success: true, message: `Scheduled "${params.title}" for ${params.date} at ${params.time}.` };
+            return { success: true, message: `Scheduled "${params.title}" for ${params.date} at ${params.time}. (Mock Integration)` };
         }
     },
     jira_ticket: {
         description: "Create a Jira ticket. Params: title, description, priority.",
         execute: async (params: any): Promise<ToolOutput> => {
             console.log("🐛 Tool Executed: Jira Ticket", params);
-            return { success: true, message: `Created Ticket PROJ-${Math.floor(Math.random()*1000)}: ${params.title}` };
+            return { success: true, message: `Created Jira Ticket PROJ-${Math.floor(Math.random()*1000)}: ${params.title}. (Mock Integration)` };
         }
     },
     unsubscribe: {
@@ -43,14 +43,16 @@ export const TOOLS = {
     }
 };
 
+const ToolCallSchema = z.object({
+    toolName: z.enum(['calendar_add', 'jira_ticket', 'unsubscribe', 'none']),
+    parameters: z.record(z.string(), z.any()).optional()
+});
+
 export async function determineToolUsage(userQuery: string) {
     try {
         const { object } = await resilientGenerateObject({
             mode: 'fast',
-            schema: z.object({
-                toolName: z.enum(['calendar_add', 'jira_ticket', 'unsubscribe', 'none']),
-                parameters: z.record(z.string(), z.any()).optional()
-            }),
+            schema: ToolCallSchema,
             prompt: `
                 Does the user want to perform an action?
                 Query: "${userQuery}"
@@ -64,7 +66,7 @@ export async function determineToolUsage(userQuery: string) {
             `
         });
 
-        const toolCall = object as { toolName: ToolName | 'none'; parameters?: any };
+        const toolCall = object as z.infer<typeof ToolCallSchema>;
 
         if (toolCall.toolName !== 'none' && TOOLS[toolCall.toolName]) {
             // Execute Tool

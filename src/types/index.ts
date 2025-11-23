@@ -6,6 +6,7 @@ export interface Email {
   timestamp: string;
   isRead: boolean;
   category?: 'Important' | 'Newsletter' | 'Spam' | 'To-Do' | 'Uncategorized';
+  priorityMatrix?: 'Do First' | 'Schedule' | 'Delegate' | 'Delete'; // Eisenhower Matrix
   actionItems?: ActionItem[];
   analysis?: string; // Summary
   sentiment?: 'Positive' | 'Neutral' | 'Negative' | 'Urgent';
@@ -43,6 +44,8 @@ export interface Draft {
   followUpSuggestions?: string[];
   createdAt: string;
   attachments?: Attachment[];
+  confidenceScore?: number; // 0-100
+  riskAssessment?: string; // Reason for low confidence
 }
 
 export interface SentEmail {

@@ -161,6 +161,16 @@ export function AgentChat({ contextEmailId }: AgentChatProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+            {/* Voice Toggle */}
+            <button 
+                onClick={toggleVoiceMode}
+                className={`p-2 rounded-lg transition-colors animate-in fade-in ${
+                    isListening ? 'bg-red-500 text-white animate-pulse' : 'text-slate-400 hover:bg-slate-100'
+                }`}
+            >
+                {isListening ? <StopCircle className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </button>
+
             {isSpeaking ? (
                 <button onClick={stopSpeaking} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors animate-pulse">
                     <StopCircle className="w-4 h-4" />

@@ -8,6 +8,8 @@ import { getStyleContext, learnFromEdit } from '@/lib/style-learner';
 const DraftSchema = z.object({
   subject: z.string(),
   body: z.string(),
+  confidenceScore: z.number().min(0).max(100).describe("Confidence score of the draft (0-100)"),
+  riskAssessment: z.string().describe("Brief assessment of any risks or uncertainties in the draft"),
 });
 
 export async function POST(req: Request) {
@@ -23,11 +25,16 @@ export async function POST(req: Request) {
     // 1. Get User Style Context (Digital DNA)
     const userStyle = getStyleContext();
     
+    // --- MEMORY CORE RETRIEVAL ---
+    const memoryContext = db.searchMemory(`${email.subject} ${email.sender} ${email.body.substring(0, 100)}`)
+        .map(r => `- [Past Context] ${r.text}`)
+        .join('\n');
+
     const doc = nlp(email.body);
     const people = doc.people().out('array');
     const senderName = people.length > 0 ? people[0] : (email.sender.split('@')[0] || 'there');
-
-    let draftContent = { subject: '', body: '' };
+    
+    // ...
     
     try {
          // 2. Drafting with Digital DNA
@@ -41,6 +48,9 @@ export async function POST(req: Request) {
               USER STYLE DNA:
               ${userStyle}
               
+              MEMORY CONTEXT (Past interactions):
+              ${memoryContext || "No relevant past context found."}
+              
               TASK: Draft a reply based on the context below.
               
               From: ${email.sender}
@@ -51,18 +61,21 @@ export async function POST(req: Request) {
               GUIDELINES:
               1. Mimic the User Style DNA exactly (tone, signature).
               2. Be concise and professional.
+              3. Assess your own confidence. If data is missing (e.g. user asks for attachment but none provided, or asks about a date not known), lower the score.
             `,
             temperature: 0.3, 
          });
          
-         const draftData = object as { subject: string; body: string };
+         const draftData = object as { subject: string; body: string; confidenceScore: number; riskAssessment: string };
          draftContent = { ...draftData };
 
     } catch (e) {
          console.error("⚠️ LLM Generation Failed:", e);
          draftContent = {
             subject: `Re: ${email.subject}`,
-            body: `Hi ${senderName},\n\nI received your email regarding "${email.subject}" and will review it shortly.\n\nBest,\nMailMint AI Agent`
+            body: `Hi ${senderName},\n\nI received your email regarding "${email.subject}" and will review it shortly.\n\nBest,\nMailMint AI Agent`,
+            confidenceScore: 50,
+            riskAssessment: "Draft generated via fallback due to AI error."
          };
     }
 
@@ -74,6 +87,8 @@ export async function POST(req: Request) {
       body: draftContent.body,
       followUpSuggestions: [], 
       createdAt: new Date().toISOString(),
+      confidenceScore: draftContent.confidenceScore,
+      riskAssessment: draftContent.riskAssessment,
     });
 
     return NextResponse.json(draft);

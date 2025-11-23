@@ -24,6 +24,47 @@ class Store {
     this.entities = [];
     this.tasks = [];
     this.userStyle = "Professional, concise, uses 'Best regards'";
+    this.vectorIndex = [];
+  }
+
+  // --- MEMORY CORE (RAG) ---
+  private vectorIndex: { id: string, text: string, embedding: number[] }[];
+
+  addToMemory(id: string, text: string) {
+      const embedding = this.simulateEmbedding(text);
+      this.vectorIndex.push({ id, text, embedding });
+  }
+
+  searchMemory(query: string, limit: number = 3): { id: string, score: number, text: string }[] {
+      const queryVec = this.simulateEmbedding(query);
+      // Simple cosine similarity simulation
+      const results = this.vectorIndex.map(item => {
+         let dotProduct = 0;
+         let magA = 0;
+         let magB = 0;
+         for(let i=0; i<item.embedding.length; i++) {
+            dotProduct += item.embedding[i] * queryVec[i];
+            magA += item.embedding[i] ** 2;
+            magB += queryVec[i] ** 2;
+         }
+         const score = dotProduct / (Math.sqrt(magA) * Math.sqrt(magB) || 1);
+         return { ...item, score };
+      });
+
+      return results.sort((a, b) => b.score - a.score).slice(0, limit);
+  }
+
+  private simulateEmbedding(text: string): number[] {
+      // Deterministic pseudo-random vector based on text content
+      const words = text.toLowerCase().split(/\s+/).slice(0, 50);
+      const vec = new Array(20).fill(0);
+      words.forEach((w, i) => {
+          const val = w.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+          vec[i % 20] += val;
+      });
+      // Normalize
+      const mag = Math.sqrt(vec.reduce((sum, v) => sum + v**2, 0)) || 1;
+      return vec.map(v => v / mag);
   }
 
   getUserStyle(): string {

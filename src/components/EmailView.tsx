@@ -1,7 +1,7 @@
 'use client';
 
 import { Email } from "@/types";
-import { Loader2, Zap, Calendar, Flag, PenTool, Mail, Mic, MessageSquare, BrainCircuit, ChevronLeft, Send, CheckCircle, Paperclip, X, Users, Sparkles } from "lucide-react";
+import { Loader2, Zap, Calendar, Flag, PenTool, Mail, Mic, MessageSquare, BrainCircuit, ChevronLeft, Send, CheckCircle, Paperclip, X, Users, Sparkles, ShieldCheck, AlertTriangle, LayoutGrid, Clock, Trash2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { mutate } from "swr";
 import TrustLedger from "./TrustLedger";
@@ -17,7 +17,7 @@ interface EmailViewProps {
 
 export function EmailView({ email, onProcess, isProcessing, onBack, className = '' }: EmailViewProps) {
   const [isDrafting, setIsDrafting] = useState(false);
-  const [generatedDraft, setGeneratedDraft] = useState<{ id: string; subject: string; body: string } | null>(null);
+  const [generatedDraft, setGeneratedDraft] = useState<{ id: string; subject: string; body: string; confidenceScore?: number; riskAssessment?: string } | null>(null);
   const [smartChips, setSmartChips] = useState<string[]>([]);
   const [isListening, setIsListening] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -40,6 +40,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
     }
   }, [email?.id]);
 
+  // ... (keeping existing handlers for file and attachment) ...
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setAttachments(prev => [...prev, ...Array.from(e.target.files!)]);
@@ -120,6 +121,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
     }
   };
 
+  // ... (keeping existing voice command handler) ...
   const handleVoiceCommand = () => {
     if (!('webkitSpeechRecognition' in window)) {
       alert("Voice commands are only supported in Chrome/Edge/Safari. Please ensure you are using a supported browser.");
@@ -158,13 +160,11 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
         const cleanTranscript = transcript.toLowerCase().trim();
         
         // 1. Empty Intent Detection: Commands that mean "Just Draft"
-        // If the user says ONLY these phrases (fuzzy match), we send NO instruction (auto-mode)
         const emptyIntents = [
             'draft a reply', 'draft reply', 'reply to this email', 'reply to email', 
             'write a reply', 'write reply', 'reply', 'draft', 'respond'
         ];
 
-        // Check if transcript is basically just one of these commands
         const isEmptyIntent = emptyIntents.some(intent => 
             cleanTranscript === intent || 
             cleanTranscript === intent + '.' ||
@@ -178,7 +178,6 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
         }
 
         // 2. Command Parsing: Strip prefix "Reply saying..."
-        // If it's not empty, we try to strip the command part
         const commandPrefixes = [
             'draft a reply saying', 'reply saying', 'write a reply saying', 
             'reply that', 'tell him that', 'tell her that', 'tell them that', 
@@ -190,27 +189,17 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
 
         for (const prefix of commandPrefixes) {
             if (cleanTranscript.startsWith(prefix)) {
-                // Slice off the prefix from the ORIGINAL transcript (to preserve case of the message)
-                // +1 for potential space
                 finalInstruction = transcript.slice(prefix.length).trim();
                 matchedPrefix = true;
                 break;
             }
         }
 
-        // If we didn't match a specific "saying" prefix but it contains "draft" or "reply",
-        // we fall back to the old "strip keywords" method but be more careful.
         if (!matchedPrefix && (cleanTranscript.includes('draft') || cleanTranscript.includes('reply'))) {
-             // If it's a complex sentence like "I want you to draft a reply about X",
-             // we might just pass it as is, OR try to clean it.
-             // User complaint: "replies are like draft a reply".
-             // So we MUST strip the command words if they appear at start.
-             
              const fallbackRegex = /^(draft a reply|reply to this email|reply|write a response|draft)( to this email)?( saying| that)?/i;
              finalInstruction = transcript.replace(fallbackRegex, '').trim();
         }
 
-        // Final Check: If after cleaning we have very little text, ignore or treat as empty
         if (finalInstruction.length < 3) {
              handleDraft(undefined);
         } else {
@@ -223,6 +212,28 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
       console.error("Speech Recognition Error:", e);
       setIsListening(false);
     }
+  };
+
+  const getMatrixBadge = (matrix: string | undefined) => {
+    if (!matrix) return null;
+    const styles = {
+        'Do First': 'bg-red-100 text-red-800 border-red-200',
+        'Schedule': 'bg-blue-100 text-blue-800 border-blue-200',
+        'Delegate': 'bg-amber-100 text-amber-800 border-amber-200',
+        'Delete': 'bg-slate-100 text-slate-600 border-slate-200',
+    };
+    const icons = {
+        'Do First': <Zap className="w-3 h-3" />,
+        'Schedule': <Clock className="w-3 h-3" />,
+        'Delegate': <Users className="w-3 h-3" />,
+        'Delete': <Trash2 className="w-3 h-3" />,
+    };
+    return (
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider border ${styles[matrix as keyof typeof styles] || styles['Delete']}`}>
+            {icons[matrix as keyof typeof icons] || icons['Delete']}
+            {matrix}
+        </span>
+    );
   };
 
   if (!email) {
@@ -250,7 +261,10 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
                         <ChevronLeft className="w-5 h-5" />
                     </button>
                 )}
-                <h1 className="text-lg md:text-xl font-bold text-slate-900 leading-snug truncate" title={email.subject}>{email.subject}</h1>
+                <div className="flex flex-col md:flex-row md:items-center gap-2 overflow-hidden">
+                    <h1 className="text-lg md:text-xl font-bold text-slate-900 leading-snug truncate" title={email.subject}>{email.subject}</h1>
+                    {email.priorityMatrix && getMatrixBadge(email.priorityMatrix)}
+                </div>
              </div>
              
              {/* Smart Chips */}
@@ -333,17 +347,35 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
         {generatedDraft && (
           <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-4 md:p-6 shadow-sm animate-in slide-in-from-top-4 duration-500">
              
-             <div className="flex justify-between items-center mb-4">
+             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
                <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
                  <Mail className="w-4 h-4 text-indigo-500" />
                  {sendSuccess ? "Reply Sent Successfully" : "Auto-Generated Reply"}
                </h3>
-               <div className="flex gap-2">
-                  <button className="text-xs bg-white px-3 py-1 rounded border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors">
-                    Copy Text
-                  </button>
-               </div>
+               
+               {/* Confidence Score & Risk */}
+               {generatedDraft.confidenceScore !== undefined && (
+                 <div className="flex items-center gap-2">
+                    <div className={`text-xs px-2 py-1 rounded-lg border font-bold flex items-center gap-1 ${
+                        generatedDraft.confidenceScore > 80 ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                        generatedDraft.confidenceScore > 50 ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                        'bg-red-100 text-red-700 border-red-200'
+                    }`}>
+                        {generatedDraft.confidenceScore > 80 ? <ShieldCheck className="w-3 h-3"/> : <AlertTriangle className="w-3 h-3"/>}
+                        {generatedDraft.confidenceScore}% Confidence
+                    </div>
+                 </div>
+               )}
              </div>
+
+             {generatedDraft.riskAssessment && generatedDraft.confidenceScore && generatedDraft.confidenceScore < 80 && (
+                <div className="mb-4 text-xs bg-amber-50 text-amber-800 p-2 rounded-lg border border-amber-200 flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <div>
+                        <span className="font-bold">Risk Assessment:</span> {generatedDraft.riskAssessment}
+                    </div>
+                </div>
+             )}
              
              {sendSuccess ? (
                 <div className="bg-white rounded-xl border border-green-200 p-8 shadow-sm flex flex-col items-center justify-center text-center">
