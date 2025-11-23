@@ -9,10 +9,9 @@ interface EmailViewProps {
   email: Email | null;
   onProcess: (id: string) => Promise<void>;
   isProcessing: boolean;
-  onOpenWarRoom?: (draft: string, profile: string) => void; // New prop
 }
 
-export function EmailView({ email, onProcess, isProcessing, onOpenWarRoom }: EmailViewProps) {
+export function EmailView({ email, onProcess, isProcessing }: EmailViewProps) {
   const [isDrafting, setIsDrafting] = useState(false);
   const [isSwarmDrafting, setIsSwarmDrafting] = useState(false);
   const [generatedDraft, setGeneratedDraft] = useState<{ subject: string; body: string; swarmAnalysis?: string } | null>(null);
@@ -290,12 +289,6 @@ export function EmailView({ email, onProcess, isProcessing, onOpenWarRoom }: Ema
                  Auto-Generated Reply
                </h3>
                <div className="flex gap-2">
-                  <button 
-                    onClick={() => onOpenWarRoom?.(generatedDraft.body, email.senderProfile ? JSON.stringify(email.senderProfile) : "Unknown Profile")}
-                    className="text-xs bg-purple-100 px-3 py-1 rounded border border-purple-200 text-purple-700 hover:bg-purple-200 transition-colors font-bold flex items-center gap-1"
-                  >
-                    🔮 WAR ROOM
-                  </button>
                   <button className="text-xs bg-white px-3 py-1 rounded border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors">
                     Copy Text
                   </button>

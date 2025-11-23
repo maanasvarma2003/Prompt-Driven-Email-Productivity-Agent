@@ -9,13 +9,10 @@ import { PromptModal } from "@/components/PromptModal";
 import { Dashboard } from "@/components/Dashboard";
 import { DraftsList } from "@/components/DraftsList";
 import { SentList } from "@/components/SentList";
-import { Settings, RefreshCcw, LayoutDashboard, Inbox as InboxIcon, Bot, FileText, Leaf, Send, Zap, Layers, Share2, Sparkles, Dna, Video } from "lucide-react";
+import { Settings, RefreshCcw, LayoutDashboard, Inbox as InboxIcon, Bot, FileText, Leaf, Send, Zap, Layers, Share2, Sparkles } from "lucide-react";
 import { Email, Draft, SentEmail } from "@/types";
 import { FocusMode } from "@/components/FocusMode";
 import { predictNextEmail } from "@/lib/precog";
-import DigitalDNA from "@/components/DigitalDNA";
-import VideoStudio from "@/components/VideoStudio";
-import WarRoom from "@/components/WarRoom";
 import dynamic from 'next/dynamic';
 
 const NetworkView = dynamic(() => import('@/components/NetworkView').then(mod => mod.NetworkView), { 
@@ -29,7 +26,7 @@ const NetworkView = dynamic(() => import('@/components/NetworkView').then(mod =>
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-type View = 'dashboard' | 'inbox' | 'agent' | 'drafts' | 'sent' | 'focus' | 'network' | 'dna' | 'video';
+type View = 'dashboard' | 'inbox' | 'agent' | 'drafts' | 'sent' | 'focus' | 'network';
 
 export default function Home() {
   return (
@@ -58,9 +55,6 @@ function AppShell() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [prediction, setPrediction] = useState<any>(null);
-  
-  // War Room State Management
-  const [warRoomData, setWarRoomData] = useState<{ draft: string; profile: string } | null>(null);
 
   // Run Pre-Cog Engine
   useEffect(() => {
@@ -203,12 +197,6 @@ function AppShell() {
                     <NavItem view="sent" icon={Send} label="Sent" />
                 </div>
 
-                <div className="space-y-1">
-                    <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Futurist Labs</p>
-                    <NavItem view="dna" icon={Dna} label="Digital DNA" />
-                    <NavItem view="video" icon={Video} label="Avatar Studio" />
-                </div>
-
             </div>
         </div>
 
@@ -267,7 +255,6 @@ function AppShell() {
                 email={selectedEmail} 
                 onProcess={handleProcess}
                 isProcessing={processingId === selectedId}
-                onOpenWarRoom={(draft, profile) => setWarRoomData({ draft, profile })}
               />
             </div>
           </div>
@@ -307,32 +294,7 @@ function AppShell() {
                 <NetworkView emails={emails || []} />
             </div>
         )}
-
-        {currentView === 'dna' && (
-            <div className="h-full w-full p-10 flex items-center justify-center bg-gradient-to-br from-zinc-900 to-black">
-                <div className="w-full max-w-3xl">
-                   <DigitalDNA />
-                </div>
-            </div>
-        )}
-
-        {currentView === 'video' && (
-             <div className="h-full w-full p-10 flex items-center justify-center bg-gradient-to-br from-zinc-900 to-black">
-                <div className="w-full max-w-2xl h-[600px]">
-                   <VideoStudio />
-                </div>
-             </div>
-        )}
       </div>
-
-      {/* Global War Room Modal - Rendered at root level to ensure z-index dominance */}
-      {warRoomData && (
-        <WarRoom 
-          draft={warRoomData.draft}
-          recipientProfile={warRoomData.profile}
-          onClose={() => setWarRoomData(null)}
-        />
-      )}
 
       {/* Settings Modal */}
       <PromptModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
