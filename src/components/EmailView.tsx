@@ -69,7 +69,9 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
       const data = await res.json();
       
       if (!res.ok) {
-        throw new Error(data.error || "Failed to generate draft");
+        // Parse error message from JSON response if available
+        const errorMsg = data.error || data.details || "Failed to generate draft";
+        throw new Error(errorMsg);
       }
 
       if (data.subject && data.body) {
