@@ -43,7 +43,6 @@ export interface Draft {
   followUpSuggestions?: string[];
   createdAt: string;
   attachments?: Attachment[];
-  swarmAnalysis?: string; // New field for Swarm output
 }
 
 export interface SentEmail {
