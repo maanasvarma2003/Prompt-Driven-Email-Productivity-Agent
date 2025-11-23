@@ -1,6 +1,5 @@
 import { generateObject, streamText } from 'ai';
-import { groq } from './groq';
-import { FAST_MODEL, SMART_MODEL, FAST_PARAMS, DEEP_PARAMS } from './ai';
+import { groq, FAST_MODEL, SMART_MODEL, FAST_PARAMS, DEEP_PARAMS } from './groq';
 
 // Re-export models so other files can import them from here if needed
 export { FAST_MODEL, SMART_MODEL };
