@@ -126,6 +126,15 @@ export function AgentChat({ contextEmailId }: AgentChatProps) {
     setAttachments([]);
   };
 
+  useEffect(() => {
+    // Stop speaking when component unmounts or route/context might change (handled by cleanup)
+    return () => {
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+    };
+  }, []);
+
   // TTS Logic
   const speak = (text: string) => {
       if (!window.speechSynthesis) return;
