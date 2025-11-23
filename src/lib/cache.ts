@@ -2,7 +2,7 @@
 // Ensures 0ms latency for repeated queries or identical contexts.
 
 class AI_Cache {
-  private cache: Map<string, { data: any; timestamp: number }>;
+  private cache: Map<string, { data: unknown; timestamp: number }>;
   private maxSize: number;
   private ttl: number; // Time to live in ms
 
@@ -16,7 +16,7 @@ class AI_Cache {
     return `${prefix}:${JSON.stringify(params)}`;
   }
 
-  get(key: string): any | null {
+  get(key: string): unknown | null {
     if (!this.cache.has(key)) return null;
 
     const item = this.cache.get(key)!;
@@ -31,11 +31,11 @@ class AI_Cache {
     this.cache.delete(key);
     this.cache.set(key, item);
 
-    console.log(`🚀 Cache Hit: ${key.substring(0, 50)}...`);
+    // console.log(`🚀 Cache Hit: ${key.substring(0, 50)}...`);
     return item.data;
   }
 
-  set(key: string, data: any): void {
+  set(key: string, data: unknown): void {
     // Evict oldest if full
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;

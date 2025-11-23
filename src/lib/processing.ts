@@ -2,13 +2,10 @@ import { db } from '@/lib/store';
 import { aiCache } from '@/lib/cache';
 import { resilientGenerateObject } from '@/lib/resilient';
 import { z } from 'zod';
-import nlp from 'compromise';
 
 // Schema for LLM analysis
 const AnalysisSchema = z.object({
   category: z.enum(['Important', 'To-Do', 'Newsletter', 'Spam', 'Uncategorized']),
-  // Priority Matrix Classification (Eisenhower)
-  priorityMatrix: z.enum(['Do First', 'Schedule', 'Delegate', 'Delete']).describe("Eisenhower Matrix quadrant based on urgency and importance."),
   summary: z.string().describe("A natural, conversational summary of the email (as if spoken by a human assistant). No length limit."),
   sentiment: z.enum(['Positive', 'Neutral', 'Negative', 'Urgent']).describe("The emotional tone or urgency of the email."),
   keyEntities: z.array(z.string()).describe("List of key people, organizations, or topics mentioned."),
@@ -32,7 +29,7 @@ export async function processEmail(emailId: string) {
     }
 
     // 0. Check Store (Idempotency)
-    if (email.analysis && email.category && email.priorityMatrix) {
+    if (email.analysis && email.category) {
       return email;
     }
 
@@ -56,15 +53,12 @@ export async function processEmail(emailId: string) {
     // --- FAST PATH (Milliseconds) ---
     let isFastPath = false;
     let fastCategory: any = null;
-    let fastMatrix: any = null;
 
     if (sender.includes('newsletter') || bodyText.includes('unsubscribe') || bodyText.includes('view in browser')) {
         fastCategory = 'Newsletter';
-        fastMatrix = 'Delete';
         isFastPath = true;
     } else if (sender.includes('no-reply') || bodyText.includes('click here to claim')) {
         fastCategory = 'Spam';
-        fastMatrix = 'Delete';
         isFastPath = true;
     }
 
@@ -78,13 +72,15 @@ export async function processEmail(emailId: string) {
 
         finalResult = {
             category: fastCategory,
-            priorityMatrix: fastMatrix,
             actionItems: [], // Usually no tasks in newsletters/spam
             summary: summary
         };
     } else {
         // --- ACCURATE PATH (Groq LPU) ---
         try {
+            // ⚡ OPTIMIZATION: Use 'fast' mode (Llama 3.1 8B) for sub-second triage by default.
+            // We only upgrade to 'smart' (70B) if strictly necessary or requested.
+            // Llama 3.1 8B is incredibly capable for this task and 10x faster.
             console.log(`🧠 Invoking Groq Llama 3.1 (FAST_MODEL) for rapid analysis...`);
             
             // Optimized prompt for high-speed Groq inference
@@ -100,12 +96,11 @@ export async function processEmail(emailId: string) {
                     
                     Output JSON only.
                     1. Category: Important, To-Do, Newsletter, Spam, or Uncategorized.
-                    2. PriorityMatrix: 'Do First' (Urgent+Important), 'Schedule' (Important-NotUrgent), 'Delegate' (Urgent-NotImportant), 'Delete' (Neither).
-                    3. Summary: Write a simple, human-like summary. No word limit, just make it easy to understand. Speak naturally.
-                    4. Sentiment: Detect tone.
-                    5. KeyEntities: Extract important names.
-                    6. ActionItems: strict list of tasks.
-                    7. SenderProfile: Briefly analyze the sender's personality archetype (e.g. 'The Analyst') and 1 sentence strategy to reply.
+                    2. Summary: Write a simple, human-like summary. No word limit, just make it easy to understand. Speak naturally.
+                    3. Sentiment: Detect tone.
+                    4. KeyEntities: Extract important names.
+                    5. ActionItems: strict list of tasks.
+                    6. SenderProfile: Briefly analyze the sender's personality archetype (e.g. 'The Analyst') and 1 sentence strategy to reply.
                 `,
                 temperature: 0.1, 
             });
@@ -114,7 +109,6 @@ export async function processEmail(emailId: string) {
 
             finalResult = {
                 category: analysis.category,
-                priorityMatrix: analysis.priorityMatrix,
                 actionItems: analysis.actionItems,
                 summary: analysis.summary,
                 sentiment: analysis.sentiment,
@@ -134,8 +128,7 @@ export async function processEmail(emailId: string) {
             console.log("⚠️ Falling back to Basic NLP Engine.");
             
             let fallbackCategory = 'Uncategorized';
-            let fallbackMatrix = 'Schedule';
-            if (subject.includes('urgent')) { fallbackCategory = 'Important'; fallbackMatrix = 'Do First'; }
+            if (subject.includes('urgent')) fallbackCategory = 'Important';
             else if (bodyText.includes('please')) fallbackCategory = 'To-Do';
 
             // Improved Fallback Summary
@@ -144,29 +137,32 @@ export async function processEmail(emailId: string) {
 
             finalResult = {
                 category: fallbackCategory,
-                priorityMatrix: fallbackMatrix,
                 actionItems: [],
                 summary: fallbackSummary
             };
         }
     }
-    // ...
+
+    // Persist Entities (Simple extraction)
+    const senderName = email.sender.split('@')[0].replace(/[0-9]/g, '');
+    if (senderName.length > 2) db.addEntity(senderName, 'Person', emailId);
+
+    // Save advanced entities if extracted
+    if (finalResult.entities && Array.isArray(finalResult.entities)) {
+        finalResult.entities.forEach((entity: string) => {
+            if (entity.length > 3) db.addEntity(entity, 'Topic', emailId);
+        });
+    }
+
+    // Cache the result
+    aiCache.set(cacheKey, finalResult);
+
     // Update Store synchronously
     const updatedEmail = db.updateEmail(emailId, {
       category: finalResult.category,
-      priorityMatrix: finalResult.priorityMatrix,
       actionItems: finalResult.actionItems,
-      analysis: finalResult.summary,
-      sentiment: finalResult.sentiment,
-      senderProfile: finalResult.senderProfile,
-      entities: finalResult.entities
+      analysis: finalResult.summary
     });
-    
-    // --- 7. MEMORY CORE INDEXING ---
-    // Index this email into the vector store for future RAG
-    if (finalResult.summary) {
-        db.addToMemory(emailId, `Sender: ${email.sender}. Subject: ${email.subject}. Summary: ${finalResult.summary}`);
-    }
 
     console.log(`⚡ Process Complete in ${Date.now() - startTime}ms`);
     

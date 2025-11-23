@@ -48,14 +48,6 @@ export function DraftsList({ drafts }: DraftsListProps) {
 
   const triggerAttach = (id: string) => {
       setAttachingId(id);
-      // We need to wait for state update? No, just trigger click.
-      // But we need to know ID in onChange. 
-      // State updates are async. 
-      // Better: Use a dedicated function that sets ID then clicks.
-      // But click is synchronous.
-      // We'll set ID then click.
-      // Actually, we can just setAttachingId, and render the input conditionally? 
-      // or just have one input and rely on `attachingId` being set.
       setTimeout(() => fileInputRef.current?.click(), 0);
   };
 
@@ -208,10 +200,7 @@ export function DraftsList({ drafts }: DraftsListProps) {
                    ) : (
                      <>
                        <button 
-                         onClick={() => {
-                            setAttachingId(draft.id);
-                            setTimeout(() => fileInputRef.current?.click(), 0);
-                         }}
+                         onClick={() => triggerAttach(draft.id)}
                          disabled={!!sendingId}
                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                          title="Attach Files"

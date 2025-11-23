@@ -1,7 +1,7 @@
 'use client';
 
 import { SentEmail } from "@/types";
-import { Mail, Send, CheckCircle } from "lucide-react";
+import { Send, CheckCircle } from "lucide-react";
 
 interface SentListProps {
   sentEmails: SentEmail[];

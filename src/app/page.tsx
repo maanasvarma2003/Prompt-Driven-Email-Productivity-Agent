@@ -32,10 +32,16 @@ export default function Home() {
   );
 }
 
+interface Prediction {
+    recipient: string;
+    reason: string;
+    confidence: number;
+}
+
 function AppShell() {
   const { data: emails, error: emailError } = useSWR<Email[]>('/api/emails');
   const { data: drafts, error: draftsError } = useSWR<Draft[]>('/api/drafts');
-  const { data: sentEmails, error: sentError } = useSWR<SentEmail[]>('/api/sent');
+  const { data: sentEmails } = useSWR<SentEmail[]>('/api/sent');
 
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -43,7 +49,7 @@ function AppShell() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [prediction, setPrediction] = useState<any>(null);
+  const [prediction, setPrediction] = useState<Prediction | null>(null);
   
   // Mobile Sidebar State
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -52,7 +58,13 @@ function AppShell() {
   useEffect(() => {
       if (sentEmails) {
           const pred = predictNextEmail(sentEmails);
-          setPrediction(pred);
+          if (pred) {
+              setPrediction({
+                  recipient: pred.recipient,
+                  reason: pred.reason,
+                  confidence: pred.confidence
+              });
+          }
       }
   }, [sentEmails]);
 
@@ -87,6 +99,9 @@ function AppShell() {
       }
 
       const processedEmail = await res.json();
+      // Use processedEmail to update UI optimistically or just wait for revalidation
+      console.log("Processed:", processedEmail.id);
+      
       await Promise.all([
         mutate('/api/emails')
       ]);
@@ -116,6 +131,7 @@ function AppShell() {
       setSuccessMessage("System fully reset. All emails marked as unread.");
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (e) {
+      console.error(e);
       setErrorMessage("Failed to reset system.");
     }
   };

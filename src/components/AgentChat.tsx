@@ -1,7 +1,7 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { Send, Bot, Sparkles, Edit, User, Paperclip, AlertCircle, Volume2, StopCircle, X, File, Loader2, CheckCircle } from 'lucide-react';
+import { Send, Bot, Sparkles, Edit, User, Paperclip, Volume2, StopCircle, X, Loader2, CheckCircle, File } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
@@ -15,6 +15,10 @@ function ChatDraftActions({ draftId }: { draftId: string }) {
     if (e.target.files) {
       setAttachments(prev => [...prev, ...Array.from(e.target.files!)]);
     }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSend = async () => {
@@ -39,11 +43,11 @@ function ChatDraftActions({ draftId }: { draftId: string }) {
 
   return (
     <div className="mt-3 p-3 bg-white rounded-xl border border-indigo-100 shadow-sm animate-in slide-in-from-top-2">
-       {/* Attachments List */}
        {attachments.length > 0 && (
          <div className="flex flex-wrap gap-2 mb-3">
             {attachments.map((f, i) => (
                 <div key={i} className="text-[10px] bg-slate-100 px-2 py-1 rounded flex items-center gap-1 border border-slate-200 text-slate-700">
+                    <File className="w-3 h-3 text-slate-400" />
                     <span className="truncate max-w-[100px]">{f.name}</span> 
                     <button onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))} className="hover:text-red-500"><X className="w-3 h-3"/></button>
                 </div>
@@ -75,7 +79,7 @@ export function AgentChat({ contextEmailId }: AgentChatProps) {
   const [attachments, setAttachments] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { messages, input, setInput, handleInputChange, handleSubmit, isLoading, setMessages, error } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, error } = useChat({
     api: '/api/chat',
     body: { contextEmailId },
     onError: (e) => {
@@ -104,13 +108,14 @@ export function AgentChat({ contextEmailId }: AgentChatProps) {
     
     // If there are attachments, we might want to append them to the message or handle them separately
     // For now, we'll append a note about attachments to the message content if any exist
-    let extraData = {};
+    // let extraData = {};
     if (attachments.length > 0) {
         // In a real app, you'd upload these first and send URLs. 
         // Here we simulate by adding metadata to the chat context or message.
         // We'll just modify the submission slightly or assume the backend knows.
         // But since useChat takes text, let's just proceed.
         // We can clear attachments after send.
+        // extraData = { hasAttachments: true };
     }
     
     handleSubmit(e, { 
@@ -161,16 +166,6 @@ export function AgentChat({ contextEmailId }: AgentChatProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-            {/* Voice Toggle */}
-            <button 
-                onClick={toggleVoiceMode}
-                className={`p-2 rounded-lg transition-colors animate-in fade-in ${
-                    isListening ? 'bg-red-500 text-white animate-pulse' : 'text-slate-400 hover:bg-slate-100'
-                }`}
-            >
-                {isListening ? <StopCircle className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            </button>
-
             {isSpeaking ? (
                 <button onClick={stopSpeaking} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors animate-pulse">
                     <StopCircle className="w-4 h-4" />
@@ -232,11 +227,11 @@ export function AgentChat({ contextEmailId }: AgentChatProps) {
                }`}>
                  <ReactMarkdown 
                    components={{
-                     ul: ({node, ...props}) => <ul className="list-disc pl-4 space-y-1" {...props} />,
-                     ol: ({node, ...props}) => <ol className="list-decimal pl-4 space-y-1" {...props} />,
-                     li: ({node, ...props}) => <li className="mb-1" {...props} />,
-                     p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
-                     strong: ({node, ...props}) => <span className="font-bold text-slate-900" {...props} />,
+                     ul: ({...props}) => <ul className="list-disc pl-4 space-y-1" {...props} />,
+                     ol: ({...props}) => <ol className="list-decimal pl-4 space-y-1" {...props} />,
+                     li: ({...props}) => <li className="mb-1" {...props} />,
+                     p: ({...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                     strong: ({...props}) => <span className="font-bold text-slate-900" {...props} />,
                    }}
                  >
                    {m.content.replace(/<!-- DRAFT_ID:(.*?) -->/, '')}

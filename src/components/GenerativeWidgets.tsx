@@ -1,12 +1,12 @@
 import React from 'react';
-import { Calendar, Plane, FileSignature, Check } from 'lucide-react';
+import { Calendar, Plane, FileSignature } from 'lucide-react';
 
 interface WidgetProps {
   type: 'calendar' | 'flight' | 'contract';
   data: any;
 }
 
-export function GenerativeWidget({ type, data }: WidgetProps) {
+export function GenerativeWidget({ type }: WidgetProps) {
   if (type === 'calendar') {
     return (
       <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm my-3 animate-in slide-in-from-top-2">

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/store';
-import { FAST_MODEL } from '@/lib/groq';
+import { FAST_MODEL } from '@/lib/ai';
 import { groq } from '@/lib/groq';
 import { generateObject } from 'ai';
 import { z } from 'zod';

@@ -12,7 +12,7 @@ interface VectorDocument {
 }
 
 // In-memory store (simulating Pinecone/pgvector)
-let vectorStore: VectorDocument[] = [];
+const vectorStore: VectorDocument[] = [];
 
 // Use LLM to extract semantic keywords as "concept embeddings"
 // This is "Agentic RAG" - using the LLM to index content intelligently.
@@ -30,13 +30,15 @@ export async function embedDocument(id: string, content: string) {
         prompt: `Extract the core semantic concepts from this text for a vector search engine:\n"${content.substring(0, 1000)}"`
       });
 
+      const data = object as { keywords: string[] };
+
       vectorStore.push({
           id,
           content,
-          keywords: (object as any).keywords.map((k: string) => k.toLowerCase())
+          keywords: data.keywords.map((k: string) => k.toLowerCase())
       });
       
-      console.log(`🧠 Indexed ${id} with concepts: [${(object as any).keywords.join(', ')}]`);
+      // console.log(`🧠 Indexed ${id} with concepts: [${data.keywords.join(', ')}]`);
 
   } catch (e) {
       console.error("Indexing failed:", e);
@@ -60,12 +62,13 @@ export async function searchVectors(query: string, limit = 5) {
             }),
             prompt: `Convert this user query into 3-5 abstract semantic search terms:\nQuery: "${query}"`
         });
-        queryConcepts = (object as any).concepts.map((c: string) => c.toLowerCase());
+        const data = object as { concepts: string[] };
+        queryConcepts = data.concepts.map((c: string) => c.toLowerCase());
     } catch (e) {
         queryConcepts = query.toLowerCase().split(' ');
     }
 
-    console.log(`🔍 Semantic Search for: "${query}" -> [${queryConcepts.join(', ')}]`);
+    // console.log(`🔍 Semantic Search for: "${query}" -> [${queryConcepts.join(', ')}]`);
 
     // 2. Score Documents (Jaccard Similarity / Concept Overlap)
     // Since we don't have a real embedding model loaded in browser/serverless efficiently,

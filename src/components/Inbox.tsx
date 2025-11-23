@@ -1,7 +1,7 @@
 'use client';
 
 import { Email } from "@/types";
-import { Inbox as InboxIcon, Search, Zap } from "lucide-react";
+import { Inbox as InboxIcon, Search } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 
 interface InboxProps {
