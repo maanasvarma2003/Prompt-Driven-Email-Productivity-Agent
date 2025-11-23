@@ -3,12 +3,12 @@ import { db } from '@/lib/store';
 
 export async function POST(req: Request) {
   try {
-    const { draftId } = await req.json();
+    const { draftId, attachments } = await req.json();
     
     // Simulate sending (Wait 1s)
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const sentEmail = db.sendDraft(draftId);
+    const sentEmail = db.sendDraft(draftId, attachments);
 
     if (!sentEmail) {
       return NextResponse.json({ error: "Draft not found" }, { status: 404 });

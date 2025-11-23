@@ -29,6 +29,12 @@ export interface PromptConfig {
   type: 'categorization' | 'extraction' | 'reply' | 'chat';
 }
 
+export interface Attachment {
+  name: string;
+  size: number;
+  type: string;
+}
+
 export interface Draft {
   id: string;
   emailId: string;
@@ -36,6 +42,7 @@ export interface Draft {
   body: string;
   followUpSuggestions?: string[];
   createdAt: string;
+  attachments?: Attachment[];
 }
 
 export interface SentEmail {
@@ -45,6 +52,7 @@ export interface SentEmail {
   subject: string;
   body: string;
   sentAt: string;
+  attachments?: Attachment[];
 }
 
 export interface Entity {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { Send, Bot, Sparkles, Edit, User, Paperclip, AlertCircle, Volume2, StopCircle } from 'lucide-react';
+import { Send, Bot, Sparkles, Edit, User, Paperclip, AlertCircle, Volume2, StopCircle, X, File } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
@@ -11,7 +11,10 @@ interface AgentChatProps {
 
 export function AgentChat({ contextEmailId }: AgentChatProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, error } = useChat({
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { messages, input, setInput, handleInputChange, handleSubmit, isLoading, setMessages, error } = useChat({
     api: '/api/chat',
     body: { contextEmailId },
     onError: (e) => {
@@ -24,6 +27,38 @@ export function AgentChat({ contextEmailId }: AgentChatProps) {
   });
 
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setAttachments(prev => [...prev, ...Array.from(e.target.files!)]);
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleMessageSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // If there are attachments, we might want to append them to the message or handle them separately
+    // For now, we'll append a note about attachments to the message content if any exist
+    let extraData = {};
+    if (attachments.length > 0) {
+        // In a real app, you'd upload these first and send URLs. 
+        // Here we simulate by adding metadata to the chat context or message.
+        // We'll just modify the submission slightly or assume the backend knows.
+        // But since useChat takes text, let's just proceed.
+        // We can clear attachments after send.
+    }
+    
+    handleSubmit(e, { 
+        data: { 
+            attachments: JSON.stringify(attachments.map(f => ({ name: f.name, type: f.type, size: f.size }))) 
+        } 
+    });
+    setAttachments([]);
+  };
 
   // TTS Logic
   const speak = (text: string) => {
@@ -183,9 +218,36 @@ export function AgentChat({ contextEmailId }: AgentChatProps) {
       </div>
 
       {/* Input Area */}
-      <form onSubmit={handleSubmit} className="p-4 bg-white border-t border-slate-100 shrink-0">
+      <form onSubmit={handleMessageSubmit} className="p-4 bg-white border-t border-slate-100 shrink-0">
+        
+        {/* Attachments Preview */}
+        {attachments.length > 0 && (
+            <div className="max-w-4xl mx-auto mb-2 flex flex-wrap gap-2">
+                {attachments.map((file, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 border border-slate-200">
+                        <File className="w-3 h-3 text-slate-400" />
+                        <span className="truncate max-w-[150px]">{file.name}</span>
+                        <button type="button" onClick={() => removeAttachment(i)} className="text-slate-400 hover:text-red-500">
+                            <X className="w-3 h-3" />
+                        </button>
+                    </div>
+                ))}
+            </div>
+        )}
+
         <div className="max-w-4xl mx-auto relative flex items-end gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-500 transition-all">
-          <button type="button" className="p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors">
+          <input 
+            type="file" 
+            multiple 
+            className="hidden" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+          />
+          <button 
+            type="button" 
+            onClick={() => fileInputRef.current?.click()}
+            className="p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+          >
             <Paperclip className="w-5 h-5" />
           </button>
           <textarea
@@ -195,7 +257,7 @@ export function AgentChat({ contextEmailId }: AgentChatProps) {
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleSubmit(e as any);
+                handleMessageSubmit(e);
               }
             }}
             placeholder="Ask MailMint..."

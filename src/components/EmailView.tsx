@@ -1,8 +1,8 @@
 'use client';
 
 import { Email } from "@/types";
-import { Loader2, Zap, Calendar, Flag, PenTool, Mail, Mic, MessageSquare, BrainCircuit, ChevronLeft, Send, CheckCircle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Loader2, Zap, Calendar, Flag, PenTool, Mail, Mic, MessageSquare, BrainCircuit, ChevronLeft, Send, CheckCircle, Paperclip, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { mutate } from "swr";
 import TrustLedger from "./TrustLedger";
 
@@ -21,6 +21,8 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
   const [isListening, setIsListening] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [sendSuccess, setSendSuccess] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Reset local state when email changes
   useEffect(() => {
@@ -28,6 +30,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
     setIsDrafting(false);
     setSmartChips([]);
     setSendSuccess(false);
+    setAttachments([]);
     if (email) {
        // Fetch Smart Chips
        fetch('/api/chips', { method: 'POST', body: JSON.stringify({ emailId: email.id }) })
@@ -35,6 +38,16 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
          .then(chips => setSmartChips(chips));
     }
   }, [email?.id]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setAttachments(prev => [...prev, ...Array.from(e.target.files!)]);
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleDraft = async (instruction?: string) => {
     if (!email) return;
@@ -77,7 +90,10 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
       const res = await fetch('/api/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ draftId: generatedDraft.id }),
+        body: JSON.stringify({ 
+            draftId: generatedDraft.id,
+            attachments: attachments.map(f => ({ name: f.name, size: f.size, type: f.type })) 
+        }),
       });
 
       if (!res.ok) throw new Error("Failed to send email");
@@ -344,6 +360,37 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
                         </div>
                         <div className="whitespace-pre-wrap text-slate-600 text-sm leading-relaxed font-mono">
                         {generatedDraft.body}
+                        </div>
+
+                        {/* Attachments Area */}
+                        <div className="mt-4 border-t border-slate-100 pt-3">
+                            <div className="flex flex-wrap gap-2 mb-2">
+                                {attachments.map((file, i) => (
+                                    <div key={i} className="flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-lg text-xs font-medium text-slate-700">
+                                        <span className="truncate max-w-[150px]">{file.name}</span>
+                                        <button onClick={() => removeAttachment(i)} className="text-slate-400 hover:text-red-500">
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                                <input 
+                                    type="file" 
+                                    multiple 
+                                    className="hidden" 
+                                    ref={fileInputRef} 
+                                    onChange={handleFileChange} 
+                                />
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors"
+                                >
+                                    <Paperclip className="w-3.5 h-3.5" />
+                                    Attach Files
+                                </button>
+                            </div>
                         </div>
 
                         {/* Trust Ledger Integration */}

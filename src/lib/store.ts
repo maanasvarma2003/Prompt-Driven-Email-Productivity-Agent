@@ -1,4 +1,4 @@
-import { Email, PromptConfig, Draft, SentEmail, Entity, Task } from "@/types";
+  import { Email, PromptConfig, Draft, SentEmail, Entity, Task, Attachment } from "@/types";
 import { mockInbox } from "@/data/mock-inbox";
 import { defaultPrompts } from "@/data/default-prompts";
 
@@ -135,7 +135,7 @@ class Store {
     return this.sentEmails;
   }
 
-  sendDraft(draftId: string): SentEmail | null {
+  sendDraft(draftId: string, attachments?: Attachment[]): SentEmail | null {
     const draftIndex = this.drafts.findIndex(d => d.id === draftId);
     if (draftIndex === -1) return null;
 
@@ -148,7 +148,8 @@ class Store {
       recipient: originalEmail ? originalEmail.sender : "Unknown",
       subject: draft.subject,
       body: draft.body,
-      sentAt: new Date().toISOString()
+      sentAt: new Date().toISOString(),
+      attachments: attachments || draft.attachments
     };
 
     this.sentEmails.push(sentEmail);
