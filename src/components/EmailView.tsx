@@ -1,10 +1,11 @@
 'use client';
 
 import { Email } from "@/types";
-import { Loader2, Zap, Calendar, Flag, PenTool, Mail, Mic, MessageSquare, BrainCircuit, ChevronLeft, Send, CheckCircle, Paperclip, X } from "lucide-react";
+import { Loader2, Zap, Calendar, Flag, PenTool, Mail, Mic, MessageSquare, BrainCircuit, ChevronLeft, Send, CheckCircle, Paperclip, X, Users, Sparkles } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { mutate } from "swr";
 import TrustLedger from "./TrustLedger";
+import { GenerativeWidget } from "./GenerativeWidgets";
 
 interface EmailViewProps {
   email: Email | null;
@@ -16,7 +17,8 @@ interface EmailViewProps {
 
 export function EmailView({ email, onProcess, isProcessing, onBack, className = '' }: EmailViewProps) {
   const [isDrafting, setIsDrafting] = useState(false);
-  const [generatedDraft, setGeneratedDraft] = useState<{ id: string; subject: string; body: string } | null>(null);
+  const [isSwarmDrafting, setIsSwarmDrafting] = useState(false); // New state for Swarm
+  const [generatedDraft, setGeneratedDraft] = useState<{ id: string; subject: string; body: string; swarmAnalysis?: string } | null>(null);
   const [smartChips, setSmartChips] = useState<string[]>([]);
   const [isListening, setIsListening] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -49,9 +51,11 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleDraft = async (instruction?: string) => {
+  const handleDraft = async (instruction?: string, mode: 'standard' | 'swarm' = 'standard') => {
     if (!email) return;
-    setIsDrafting(true);
+    
+    if (mode === 'swarm') setIsSwarmDrafting(true);
+    else setIsDrafting(true);
     
     setGeneratedDraft(null); // Clear previous draft
     setSendSuccess(false);
@@ -60,7 +64,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
       const res = await fetch('/api/draft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emailId: email.id, instruction }),
+        body: JSON.stringify({ emailId: email.id, instruction, mode }),
       });
       
       const data = await res.json();
@@ -80,6 +84,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
       alert(`Error generating draft: ${e.message}`);
     } finally {
       setIsDrafting(false);
+      setIsSwarmDrafting(false);
     }
   };
 
@@ -278,17 +283,24 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
             </button>
 
              {/* Draft Button */}
-             <button
-               onClick={() => handleDraft(undefined)}
-               onMouseEnter={() => {
-                  console.log("🔮 Speculative Drafting triggered on hover...");
-               }}
-               disabled={isDrafting}
-               className="shrink-0 flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 rounded-lg disabled:opacity-50 transition-all text-xs font-semibold shadow-sm"
-             >
-               {isDrafting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PenTool className="w-3.5 h-3.5" />}
-               Draft
-             </button>
+             <div className="flex gap-1">
+                <button
+                onClick={() => handleDraft(undefined, 'standard')}
+                disabled={isDrafting || isSwarmDrafting}
+                className="shrink-0 flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 rounded-lg rounded-r-none disabled:opacity-50 transition-all text-xs font-semibold shadow-sm"
+                >
+                {isDrafting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PenTool className="w-3.5 h-3.5" />}
+                Draft
+                </button>
+                <button
+                    onClick={() => handleDraft(undefined, 'swarm')}
+                    disabled={isDrafting || isSwarmDrafting}
+                    className="shrink-0 px-2 py-2 bg-indigo-50 border border-l-0 border-indigo-100 text-indigo-600 hover:bg-indigo-100 rounded-lg rounded-l-none transition-all"
+                    title="Deep Research & Draft (Swarm Mode)"
+                >
+                    {isSwarmDrafting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Users className="w-3.5 h-3.5" />}
+                </button>
+             </div>
 
             {/* Process Button */}
              {!email.analysis ? (
@@ -333,6 +345,17 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
         {/* Generated Draft Card */}
         {generatedDraft && (
           <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-4 md:p-6 shadow-sm animate-in slide-in-from-top-4 duration-500">
+             
+             {/* Swarm Insight (If Available) */}
+             {generatedDraft.swarmAnalysis && (
+                <div className="mb-4 p-3 bg-indigo-100/50 rounded-xl border border-indigo-200/50 text-xs text-indigo-900 font-medium">
+                    <div className="flex items-center gap-2 mb-1 text-indigo-700 uppercase tracking-wider font-bold">
+                        <Users className="w-3 h-3" /> Swarm Intelligence Active
+                    </div>
+                    <div className="opacity-80 whitespace-pre-wrap">{generatedDraft.swarmAnalysis}</div>
+                </div>
+             )}
+
              <div className="flex justify-between items-center mb-4">
                <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
                  <Mail className="w-4 h-4 text-indigo-500" />
@@ -503,6 +526,12 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
             {email.body}
           </div>
         </div>
+
+        {/* Generative UI Widgets (Demo based on keywords) */}
+        {email.body.toLowerCase().includes('flight') && <GenerativeWidget type="flight" data={{}} />}
+        {email.body.toLowerCase().includes('contract') && <GenerativeWidget type="contract" data={{}} />}
+        {email.body.toLowerCase().includes('schedule') && <GenerativeWidget type="calendar" data={{}} />}
+
       </div>
     </div>
   );

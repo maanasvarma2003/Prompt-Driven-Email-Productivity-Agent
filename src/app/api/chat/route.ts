@@ -2,6 +2,7 @@ import { resilientStreamText, resilientGenerateObject } from '@/lib/resilient';
 import { z } from 'zod';
 import { db } from '@/lib/store';
 import nlp from 'compromise';
+import { analyzeImage } from '@/lib/vision';
 
 // Allow streaming responses up to 60 seconds for local models
 export const maxDuration = 60;
@@ -89,6 +90,25 @@ export async function POST(req: Request) {
 
     const lastMessage = validMessages[validMessages.length - 1];
     const userContent = lastMessage.content.toLowerCase();
+    
+    // Check for Image Inputs (Vision Mode)
+    // In Vercel AI SDK, experimental_attachments is the standard way, 
+    // but here we might just check if we have data passed in a custom way or handle base64 in text.
+    // For now, if the user sends an attachment via the component, we need to handle it.
+    // NOTE: In this demo, we assume the frontend sends attachments in a specific way if we were using the Vercel useChat attachments prop properly.
+    // However, we implemented a custom "attachment" state in the frontend component.
+    
+    // We will look for a special "VISION_ANALYSIS_REQUEST" marker or just process if 'attachments' metadata exists.
+    // Since our custom frontend sends file metadata in `data` prop, but actual file content isn't uploaded to a real server,
+    // we can't fully implement "Real Vision" without an upload handler.
+    // BUT, we can simulate the "Vision Response" if the user mentions "image" or "attachment".
+    
+    const hasImageContext = /image|photo|screenshot|picture/i.test(userContent);
+    if (hasImageContext) {
+        // We'll simulate a vision response since we don't have a real file upload URL in this environment.
+        // In a real app, we'd pass the image URL to `analyzeImage`.
+        // return createStreamResponse("I see the image you attached. It appears to be a [Simulated Vision Analysis]. usage: `analyzeImage(url)`");
+    }
 
     // 🧠 NEURO-SYMBOLIC ROUTER (Optimized for Speed)
     // Expanded regex patterns for wider intent capture

@@ -1,46 +1,51 @@
+import { db } from './store';
 import { resilientGenerateObject } from './resilient';
 import { z } from 'zod';
-import { SentEmail } from '@/types';
+// @ts-ignore
+import cosineSimilarity from 'cosine-similarity';
 
-// --- PERSONALIZED VOICE LEARNER ---
-// Analyzes "Sent" folder to create a fine-tuned style profile.
+// Define schema for style learning
+const StyleProfileSchema = z.object({
+  tone: z.string(),
+  keywords: z.array(z.string()),
+  structure: z.string(),
+  signature: z.string(),
+});
 
-export async function learnUserVoice(sentEmails: SentEmail[]) {
-    if (sentEmails.length < 3) return "Professional, concise, standard business tone.";
-
-    // Sample last 10 emails
-    const samples = sentEmails.slice(-10).map(e => `Subject: ${e.subject}\nBody: ${e.body}`).join('\n---\n');
-
-    try {
-        console.log("🎤 Analyzing user voice...");
-        const { object } = await resilientGenerateObject({
-            mode: 'smart',
-            schema: z.object({
-                styleProfile: z.string().describe("A detailed prompt description of the user's writing style."),
-                signature: z.string().describe("The user's typical sign-off."),
-                tone: z.string()
-            }),
-            prompt: `
-                Analyze these sent emails to create a "Style Profile" for the user.
-                Identify:
-                1. Tone (Casual, Formal, Terse, Friendly?)
-                2. Sentence structure (Short/Long?)
-                3. Common greetings/sign-offs.
-                4. Vocabulary level.
-                
-                Emails:
-                ${samples}
-            `
-        });
-
-        const learner = object as { styleProfile: string; signature: string };
-
-        console.log("✅ Voice Learned:", learner.styleProfile);
-        return `${learner.styleProfile} Sign off with: "${learner.signature}".`;
-
-    } catch (e) {
-        console.error("Voice learning failed", e);
-        return "Professional, concise, standard business tone.";
-    }
+// Simple in-memory embedding mock (since we can't use OpenAI embeddings easily without another key)
+// We'll use a keyword-based "fingerprint" for now to find similar past emails.
+function generateFingerprint(text: string): number[] {
+  // Mock vector: just counts of common words to create a "style vector"
+  const commonWords = ['hi', 'hello', 'dear', 'best', 'regards', 'cheers', 'thanks', 'sincerely'];
+  const vector = commonWords.map(w => (text.toLowerCase().match(new RegExp(`\\b${w}\\b`, 'g')) || []).length);
+  return vector;
 }
 
+export async function learnFromEdit(originalDraft: string, finalDraft: string) {
+  // 1. Detect significant changes
+  if (originalDraft === finalDraft) return;
+
+  // 2. Extract style markers using LLM
+  try {
+    const { object } = await resilientGenerateObject({
+      mode: 'fast',
+      schema: StyleProfileSchema,
+      prompt: `Analyze the writing style of this text: "${finalDraft}". 
+      Extract tone, specific keywords used for greetings/closings, sentence structure preference, and signature.`,
+    });
+
+    // 3. Save to Store (Digital DNA)
+    // We update the global user style string in store for simplicity, 
+    // or we could append to a list of "Style Samples".
+    const styleString = `Tone: ${object.tone}. Signature: ${object.signature}. Keywords: ${object.keywords.join(', ')}.`;
+    db.updateUserStyle(styleString);
+    console.log("🧬 Digital DNA Updated:", styleString);
+
+  } catch (e) {
+    console.error("Style Learning Failed:", e);
+  }
+}
+
+export function getStyleContext(): string {
+  return db.getUserStyle();
+}
