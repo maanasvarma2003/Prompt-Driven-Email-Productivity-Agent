@@ -7,6 +7,11 @@ import { mutate } from "swr";
 import TrustLedger from "./TrustLedger";
 import { GenerativeWidget } from "./GenerativeWidgets";
 
+interface IWindow extends Window {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  webkitSpeechRecognition: any;
+}
+
 interface EmailViewProps {
   email: Email | null;
   onProcess: (id: string) => Promise<void>;
@@ -77,9 +82,10 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
       } else {
         throw new Error("Invalid draft response from server");
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Draft Error:", e);
-      alert(`Error generating draft: ${e.message}`);
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      alert(`Error generating draft: ${msg}`);
     } finally {
       setIsDrafting(false);
     }
@@ -112,9 +118,10 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
           setSendSuccess(false);
       }, 3000);
 
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Send Error:", e);
-      alert(`Error sending email: ${e.message}`);
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      alert(`Error sending email: ${msg}`);
     } finally {
       setIsSending(false);
     }
@@ -127,7 +134,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
     }
     
     try {
-      const recognition = new (window as any).webkitSpeechRecognition();
+      const recognition = new (window as unknown as IWindow).webkitSpeechRecognition();
       recognition.continuous = false;
       recognition.lang = 'en-US';
       
@@ -141,6 +148,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
         setIsListening(false);
       };
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       recognition.onerror = (event: any) => {
         console.error("Voice Error:", event.error);
         setIsListening(false);
@@ -149,6 +157,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
         }
       };
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
         console.log("🗣️ Raw Transcript:", transcript);

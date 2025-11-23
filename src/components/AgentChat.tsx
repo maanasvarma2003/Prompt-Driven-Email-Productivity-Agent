@@ -32,7 +32,7 @@ function ChatDraftActions({ draftId }: { draftId: string }) {
             })
         });
         setSent(true);
-    } catch (e) {
+    } catch {
         alert("Failed to send");
     } finally {
         setIsSending(false);
@@ -49,7 +49,7 @@ function ChatDraftActions({ draftId }: { draftId: string }) {
                 <div key={i} className="text-[10px] bg-slate-100 px-2 py-1 rounded flex items-center gap-1 border border-slate-200 text-slate-700">
                     <File className="w-3 h-3 text-slate-400" />
                     <span className="truncate max-w-[100px]">{f.name}</span> 
-                    <button onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))} className="hover:text-red-500"><X className="w-3 h-3"/></button>
+                    <button onClick={() => removeAttachment(i)} className="hover:text-red-500"><X className="w-3 h-3"/></button>
                 </div>
             ))}
          </div>

@@ -40,8 +40,8 @@ export async function embedDocument(id: string, content: string) {
       
       // console.log(`🧠 Indexed ${id} with concepts: [${data.keywords.join(', ')}]`);
 
-  } catch (e) {
-      console.error("Indexing failed:", e);
+  } catch {
+      console.error("Indexing failed");
       // Fallback: simple tokenization
       vectorStore.push({
           id,
@@ -64,7 +64,7 @@ export async function searchVectors(query: string, limit = 5) {
         });
         const data = object as { concepts: string[] };
         queryConcepts = data.concepts.map((c: string) => c.toLowerCase());
-    } catch (e) {
+    } catch {
         queryConcepts = query.toLowerCase().split(' ');
     }
 

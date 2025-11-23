@@ -41,7 +41,7 @@ export function DraftsList({ drafts }: DraftsListProps) {
        mutate('/api/drafts');
        setEditingId(null);
        showToast('Draft updated successfully', 'success');
-    } catch (e) {
+    } catch {
        showToast('Failed to save draft', 'error');
     }
   };
@@ -78,7 +78,7 @@ export function DraftsList({ drafts }: DraftsListProps) {
                 });
                 mutate('/api/drafts');
                 showToast('Files attached', 'success');
-             } catch (e) {
+             } catch {
                 showToast('Failed to attach files', 'error');
              }
           }
@@ -103,7 +103,7 @@ export function DraftsList({ drafts }: DraftsListProps) {
       await fetch(`/api/drafts/${id}`, { method: 'DELETE' });
       mutate('/api/drafts');
       showToast('Draft deleted', 'success');
-    } catch (e) {
+    } catch {
       showToast('Failed to delete draft', 'error');
     } finally {
       setDeletingId(null);
@@ -121,7 +121,7 @@ export function DraftsList({ drafts }: DraftsListProps) {
       if (!res.ok) throw new Error();
       mutate('/api/drafts');
       showToast('Email sent successfully!', 'success');
-    } catch (e) {
+    } catch {
       showToast('Failed to send email', 'error');
     } finally {
       setSendingId(null);

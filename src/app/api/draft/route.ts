@@ -80,11 +80,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json(draft);
 
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("Draft Error:", e);
+    const errorMessage = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ 
         error: "Draft Generation Failed", 
-        details: e.message 
+        details: errorMessage 
     }, { status: 500 });
   }
 }

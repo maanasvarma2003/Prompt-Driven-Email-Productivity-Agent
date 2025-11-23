@@ -106,7 +106,7 @@ export function Inbox({ emails, selectedId, onSelect, className = '' }: InboxPro
               {['All', 'Unread', 'Important'].map((f) => (
                 <button
                   key={f}
-                  onClick={() => setFilter(f as any)}
+                  onClick={() => setFilter(f as 'All' | 'Unread' | 'Important')}
                   className={`flex-1 py-1 rounded-md text-[11px] font-semibold transition-all duration-200 ${
                     filter === f 
                       ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5' 

@@ -2,7 +2,7 @@ import { Email } from '@/types';
 import natural from 'natural';
 
 // Initialize Tokenizer and TfIdf
-const tokenizer = new natural.WordTokenizer();
+// const tokenizer = new natural.WordTokenizer();
 const tfidf = new natural.TfIdf();
 
 // Cache for TF-IDF to avoid re-computing on every request (Simulating Vector Store)
@@ -23,6 +23,7 @@ export function indexEmails(emails: Email[]) {
   });
 
   // Swap global instance (hacky but works for serverless demo)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (tfidf as any).documents = (newTfidf as any).documents;
   isIndexed = true;
 }

@@ -15,6 +15,7 @@ export async function POST(req: Request) {
     // Zero-Shot Classification for Quick Replies
     // Using Groq 8B for instant results
     const { object } = await generateObject({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       model: groq(FAST_MODEL) as any,
       schema: z.object({ chips: z.array(z.string()).max(3) }),
       prompt: `

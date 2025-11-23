@@ -5,12 +5,14 @@ import { FAST_MODEL, SMART_MODEL, FAST_PARAMS, DEEP_PARAMS } from './ai';
 // Re-export models so other files can import them from here if needed
 export { FAST_MODEL, SMART_MODEL };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function resilientGenerateObject<T>(params: any & { mode?: 'fast' | 'smart' }) {
   const modelId = params.mode === 'fast' ? FAST_MODEL : SMART_MODEL;
   const tuningParams = params.mode === 'fast' ? FAST_PARAMS : DEEP_PARAMS;
 
   console.log(`🧠 [Groq] Generating with ${modelId} (${params.mode || 'smart'} mode)...`);
   
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { mode, ...aiSDKParams } = params;
 
   try {
@@ -19,7 +21,7 @@ export async function resilientGenerateObject<T>(params: any & { mode?: 'fast' |
         model: groq(modelId),
     temperature: tuningParams.temperature,
   });
-  } catch (error: any) {
+  } catch (error: unknown) {
       console.warn(`⚠️ Primary model ${modelId} failed. Retrying with backup...`);
       if (params.mode === 'smart') {
           console.log(`🔄 Fallback: Trying FAST_MODEL for resilience.`);
@@ -33,6 +35,7 @@ export async function resilientGenerateObject<T>(params: any & { mode?: 'fast' |
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function resilientStreamText(params: any & { mode?: 'fast' | 'smart' }) {
    const modelId = params.mode === 'fast' ? FAST_MODEL : SMART_MODEL;
     
@@ -41,7 +44,7 @@ export async function resilientStreamText(params: any & { mode?: 'fast' | 'smart
             ...params,
             model: groq(modelId),
         });
-    } catch (error) {
+    } catch {
         console.warn(`⚠️ Stream failed with ${modelId}. Fallback to FAST_MODEL.`);
    return await streamText({
             ...params,

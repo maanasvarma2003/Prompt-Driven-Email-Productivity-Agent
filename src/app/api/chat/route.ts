@@ -22,7 +22,7 @@ function createStreamResponse(text: string) {
 }
 
 // HELPER: Analyze email with NLP for instant answers
-function analyzeEmailContext(email: any, query: string): string | null {
+function analyzeEmailContext(email: { sender: string; subject: string; body: string; category?: string; analysis?: string; actionItems?: { task: string }[]; timestamp: string }, query: string): string | null {
     const doc = nlp(email.body);
     const qLower = query.toLowerCase();
 
@@ -45,7 +45,7 @@ function analyzeEmailContext(email: any, query: string): string | null {
     // Actionable Insights
     if (qLower.includes('action') || qLower.includes('task') || qLower.includes('todo') || qLower.includes('what do i need to do') || qLower.includes('next step')) {
         if (email.actionItems && email.actionItems.length > 0) {
-            return `**Action Items:**\n` + email.actionItems.map((item: any) => `- ${item.task}`).join('\n');
+            return `**Action Items:**\n` + email.actionItems.map((item) => `- ${item.task}`).join('\n');
         }
         return "No explicit action items were detected in this email.";
     }
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     const { messages, contextEmailId } = await req.json();
 
     // Sanitize messages
-    const validMessages = messages.filter((m: any) => 
+    const validMessages = messages.filter((m: { content: unknown }) => 
       m.content && typeof m.content === 'string' && m.content.trim().length > 0
     );
 
@@ -167,7 +167,7 @@ export async function POST(req: Request) {
        // Catch-all for "Show X", "List Y", "Find Z"
        if (isSearchIntent || isUnreadIntent || isUrgentIntent || isDeadlinesIntent || isSpamIntent) {
          // Instant Filter Logic
-         let matches: any[] = [];
+         let matches: typeof emails = [];
          
          if (isUnreadIntent) matches = emails.filter(e => !e.isRead);
          else if (isUrgentIntent) matches = emails.filter(e => e.category === 'Important');
@@ -180,7 +180,7 @@ export async function POST(req: Request) {
                 // Lazy load semantic engine
                 const { semanticSearch } = await import('@/lib/semantic');
                 matches = semanticSearch(userContent, emails, 10); // Increased limit
-             } catch (e) {
+             } catch {
                 const queryTerms = userContent.split(' ').filter((w: string) => w.length > 3 && !['show', 'list', 'email', 'emails', 'find'].includes(w));
                 matches = emails.filter(e => 
                     queryTerms.some((term: string) => 
@@ -193,7 +193,7 @@ export async function POST(req: Request) {
 
          if (matches.length > 0) {
             const topMatches = matches.slice(0, 5);
-            let responseText = topMatches.map((e: any, i: number) => 
+            let responseText = topMatches.map((e, i) => 
                `${i+1}. **${e.subject}**\n   - From: ${e.sender}\n   - Date: ${new Date(e.timestamp).toLocaleDateString()}`
             ).join('\n\n');
             
@@ -260,7 +260,7 @@ export async function POST(req: Request) {
              temperature: 0.2,
           });
 
-          const draftData = draftResult.object as any; // Explicit cast to avoid 'unknown' type error
+          const draftData = draftResult.object as z.infer<typeof CreateDraftSchema>;
 
           const draft = db.createDraft({
              id: Math.random().toString(36).substring(7),
@@ -292,7 +292,7 @@ export async function POST(req: Request) {
             let response = `I've processed this email for you.\n\n**Category:** ${processedEmail.category}\n\n**Summary:**\n${processedEmail.analysis}`;
             
             if (processedEmail.actionItems && processedEmail.actionItems.length > 0) {
-                response += `\n\n**Action Items:**\n` + processedEmail.actionItems.map((i: any) => `- ${i.task}`).join('\n');
+                response += `\n\n**Action Items:**\n` + processedEmail.actionItems.map((i: { task: string }) => `- ${i.task}`).join('\n');
             }
             
             return createStreamResponse(response);
@@ -348,12 +348,13 @@ export async function POST(req: Request) {
       maxTokens: 1000,
     });
 
-    return (result as any).toDataStreamResponse();
+    return result.toDataStreamResponse();
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Chat API Error:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
     return new Response(
-      JSON.stringify({ error: error.message || "An unexpected error occurred." }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }

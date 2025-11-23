@@ -1,8 +1,7 @@
 import { db } from './store';
 import { resilientGenerateObject } from './resilient';
 import { z } from 'zod';
-// @ts-expect-error cosine-similarity types missing
-import cosineSimilarity from 'cosine-similarity';
+// import cosineSimilarity from 'cosine-similarity';
 
 // Define schema for style learning
 const StyleProfileSchema = z.object({

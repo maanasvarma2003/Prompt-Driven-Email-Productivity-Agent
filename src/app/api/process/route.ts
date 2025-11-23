@@ -6,12 +6,14 @@ export async function POST(req: Request) {
     const { emailId } = await req.json();
     const updatedEmail = await processEmail(emailId);
     return NextResponse.json(updatedEmail);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Critical Error processing email:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const stack = error instanceof Error ? error.stack : undefined;
     return NextResponse.json({ 
         error: "Processing Failed", 
-        details: error.message,
-        stack: error.stack 
+        details: errorMessage,
+        stack: stack 
     }, { status: 500 });
   }
 }

@@ -107,9 +107,10 @@ function AppShell() {
       ]);
       mutate((key) => typeof key === 'string' && key.startsWith('/api/emails'));
 
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Process failed", e);
-      setErrorMessage(e.message || "An unexpected error occurred");
+      const msg = e instanceof Error ? e.message : "An unexpected error occurred";
+      setErrorMessage(msg);
       setTimeout(() => setErrorMessage(null), 5000);
     } finally {
       setProcessingId(null);
@@ -130,13 +131,13 @@ function AppShell() {
       setErrorMessage(null);
       setSuccessMessage("System fully reset. All emails marked as unread.");
       setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e);
       setErrorMessage("Failed to reset system.");
     }
   };
 
-  const NavItem = ({ view, icon: Icon, label }: { view: View; icon: any; label: string }) => (
+  const NavItem = ({ view, icon: Icon, label }: { view: View; icon: React.ElementType; label: string }) => (
     <button
       onClick={() => {
           setCurrentView(view);

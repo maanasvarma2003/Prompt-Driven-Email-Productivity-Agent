@@ -3,7 +3,7 @@ import { Calendar, Plane, FileSignature } from 'lucide-react';
 
 interface WidgetProps {
   type: 'calendar' | 'flight' | 'contract';
-  data: any;
+  data: Record<string, unknown>;
 }
 
 export function GenerativeWidget({ type }: WidgetProps) {

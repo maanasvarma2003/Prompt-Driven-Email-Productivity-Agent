@@ -52,7 +52,8 @@ export async function processEmail(emailId: string) {
 
     // --- FAST PATH (Milliseconds) ---
     let isFastPath = false;
-    let fastCategory: any = null;
+    type EmailCategory = 'Important' | 'To-Do' | 'Newsletter' | 'Spam' | 'Uncategorized';
+    let fastCategory: EmailCategory | null = null;
 
     if (sender.includes('newsletter') || bodyText.includes('unsubscribe') || bodyText.includes('view in browser')) {
         fastCategory = 'Newsletter';
@@ -121,13 +122,13 @@ export async function processEmail(emailId: string) {
                 finalResult.summary = `[URGENT] ${finalResult.summary}`;
             }
 
-        } catch (aiError: any) {
+        } catch (aiError: unknown) {
             console.error("⚠️ AI Generation Error:", aiError);
             
             // --- FALLBACK TO LOCAL NLP ---
             console.log("⚠️ Falling back to Basic NLP Engine.");
             
-            let fallbackCategory = 'Uncategorized';
+            let fallbackCategory: EmailCategory = 'Uncategorized';
             if (subject.includes('urgent')) fallbackCategory = 'Important';
             else if (bodyText.includes('please')) fallbackCategory = 'To-Do';
 
