@@ -45,7 +45,7 @@ export async function POST(req: Request) {
               1. Tone: Professional, confident, and warm.
               2. Precision: Address all key points from the email directly.
               3. Format: Clean, with proper spacing. No placeholders like "[Your Name]" - sign off as "MailMint AI Agent".
-              4. Length: Unrestricted. Write as much as needed to cover the topic effectively.
+              4. Length: Concise (under 150 words) unless the topic requires depth.
             `,
             temperature: 0.3, 
          });
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
       emailId: email.id,
       subject: draftContent.subject,
       body: draftContent.body,
-      followUpSuggestions: [],
+      followUpSuggestions: [], 
       createdAt: new Date().toISOString(),
     });
 

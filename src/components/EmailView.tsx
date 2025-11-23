@@ -139,11 +139,13 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
         const cleanTranscript = transcript.toLowerCase().trim();
         
         // 1. Empty Intent Detection: Commands that mean "Just Draft"
+        // If the user says ONLY these phrases (fuzzy match), we send NO instruction (auto-mode)
         const emptyIntents = [
             'draft a reply', 'draft reply', 'reply to this email', 'reply to email', 
             'write a reply', 'write reply', 'reply', 'draft', 'respond'
         ];
 
+        // Check if transcript is basically just one of these commands
         const isEmptyIntent = emptyIntents.some(intent => 
             cleanTranscript === intent || 
             cleanTranscript === intent + '.' ||
@@ -157,6 +159,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
         }
 
         // 2. Command Parsing: Strip prefix "Reply saying..."
+        // If it's not empty, we try to strip the command part
         const commandPrefixes = [
             'draft a reply saying', 'reply saying', 'write a reply saying', 
             'reply that', 'tell him that', 'tell her that', 'tell them that', 
@@ -168,17 +171,27 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
 
         for (const prefix of commandPrefixes) {
             if (cleanTranscript.startsWith(prefix)) {
+                // Slice off the prefix from the ORIGINAL transcript (to preserve case of the message)
+                // +1 for potential space
                 finalInstruction = transcript.slice(prefix.length).trim();
                 matchedPrefix = true;
                 break;
             }
         }
 
+        // If we didn't match a specific "saying" prefix but it contains "draft" or "reply",
+        // we fall back to the old "strip keywords" method but be more careful.
         if (!matchedPrefix && (cleanTranscript.includes('draft') || cleanTranscript.includes('reply'))) {
+             // If it's a complex sentence like "I want you to draft a reply about X",
+             // we might just pass it as is, OR try to clean it.
+             // User complaint: "replies are like draft a reply".
+             // So we MUST strip the command words if they appear at start.
+             
              const fallbackRegex = /^(draft a reply|reply to this email|reply|write a response|draft)( to this email)?( saying| that)?/i;
              finalInstruction = transcript.replace(fallbackRegex, '').trim();
         }
 
+        // Final Check: If after cleaning we have very little text, ignore or treat as empty
         if (finalInstruction.length < 3) {
              handleDraft(undefined);
         } else {
@@ -249,7 +262,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
 
              {/* Draft Button */}
              <button
-               onClick={() => handleDraft()}
+               onClick={() => handleDraft(undefined)}
                onMouseEnter={() => {
                   console.log("🔮 Speculative Drafting triggered on hover...");
                }}

@@ -9,24 +9,13 @@ import { PromptModal } from "@/components/PromptModal";
 import { Dashboard } from "@/components/Dashboard";
 import { DraftsList } from "@/components/DraftsList";
 import { SentList } from "@/components/SentList";
-import { Settings, RefreshCcw, LayoutDashboard, Inbox as InboxIcon, Bot, FileText, Leaf, Send, Layers, Share2, Sparkles, Menu, X } from "lucide-react";
+import { Settings, RefreshCcw, LayoutDashboard, Inbox as InboxIcon, Bot, FileText, Leaf, Send, Sparkles, Menu, X } from "lucide-react";
 import { Email, Draft, SentEmail } from "@/types";
-import { FocusMode } from "@/components/FocusMode";
 import { predictNextEmail } from "@/lib/precog";
-import dynamic from 'next/dynamic';
-
-const NetworkView = dynamic(() => import('@/components/NetworkView').then(mod => mod.NetworkView), { 
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center h-full text-slate-500">
-      Loading Neural Graph...
-    </div>
-  )
-});
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-type View = 'dashboard' | 'inbox' | 'agent' | 'drafts' | 'sent' | 'focus' | 'network';
+type View = 'dashboard' | 'inbox' | 'agent' | 'drafts' | 'sent';
 
 export default function Home() {
   return (
@@ -209,8 +198,6 @@ function AppShell() {
                     <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Menu</p>
                     <NavItem view="dashboard" icon={LayoutDashboard} label="Dashboard" />
                     <NavItem view="inbox" icon={InboxIcon} label="Inbox" />
-                    <NavItem view="focus" icon={Layers} label="Focus Mode" />
-                    <NavItem view="network" icon={Share2} label="Network Graph" />
                     <NavItem view="agent" icon={Bot} label="AI Agent" />
                     <NavItem view="drafts" icon={FileText} label="Drafts" />
                     <NavItem view="sent" icon={Send} label="Sent" />
@@ -311,22 +298,6 @@ function AppShell() {
 
             {currentView === 'sent' && (
               <SentList sentEmails={sentEmails || []} />
-            )}
-
-            {currentView === 'focus' && (
-              <FocusMode 
-                emails={emails || []} 
-                onAction={(id, action) => {
-                    console.log(`Focus Action: ${action} on ${id}`);
-                    mutate('/api/emails'); 
-                }} 
-              />
-            )}
-
-            {currentView === 'network' && (
-                <div className="h-full w-full animate-in fade-in duration-500">
-                    <NetworkView emails={emails || []} />
-                </div>
             )}
         </div>
       </div>
