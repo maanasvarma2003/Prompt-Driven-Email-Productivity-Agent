@@ -84,6 +84,10 @@ export function AgentChat({ contextEmailId }: AgentChatProps) {
     body: { contextEmailId },
     onError: (e) => {
       console.error("Chat error:", e);
+      // Show user-friendly error message for API key issues
+      if (e.message?.includes('API Key') || e.message?.includes('Invalid') || e.message?.includes('401')) {
+        alert('🔑 API Key Error\n\nPlease check your .env.local file and ensure GROQ_API_KEY is set correctly.\n\nGet your key at: https://console.groq.com\n\nAfter adding the key, restart your development server.');
+      }
     },
     onFinish: (message) => {
         // Auto-TTS for assistant messages

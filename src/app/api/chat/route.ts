@@ -1,7 +1,7 @@
 import { resilientStreamText } from '@/lib/resilient';
 import { db } from '@/lib/store';
 import { retrieveRelevantContext } from '@/lib/semantic';
-import { SMART_MODEL, DEEP_PARAMS } from '@/lib/groq';
+import { SMART_MODEL, DEEP_PARAMS, validateGroqApiKey } from '@/lib/groq';
 
 // Allow streaming responses up to 60 seconds
 export const maxDuration = 60;
@@ -85,6 +85,22 @@ Answer the user's question comprehensively using the email context provided. Be 
 
 export async function POST(req: Request) {
   try {
+    // Validate API key first
+    const keyValidation = validateGroqApiKey();
+    if (!keyValidation.valid) {
+      return new Response(
+        JSON.stringify({ 
+          error: "API Key Configuration Error",
+          details: keyValidation.error,
+          help: "Please add your Groq API key to .env.local file. Get your key at https://console.groq.com"
+        }), 
+        { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     const { messages, contextEmailId } = await req.json();
 
     // Sanitize messages
@@ -143,9 +159,34 @@ export async function POST(req: Request) {
 
   } catch (error: unknown) {
     console.error("Chat API Error:", error);
+    
+    // Check for API key related errors
     const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
+    const errorString = errorMessage.toLowerCase();
+    
+    if (errorString.includes('api key') || errorString.includes('invalid') || errorString.includes('unauthorized') || errorString.includes('401')) {
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid API Key",
+          details: "Your Groq API key is invalid or not configured correctly.",
+          help: "Please check your .env.local file and ensure GROQ_API_KEY is set correctly. Get your key at https://console.groq.com",
+          troubleshooting: [
+            "1. Create a .env.local file in the email-agent directory",
+            "2. Add: GROQ_API_KEY=your_key_here",
+            "3. Restart your development server",
+            "4. Make sure the key starts with 'gsk_' and is at least 51 characters"
+          ]
+        }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ 
+        error: "Chat Error",
+        details: errorMessage,
+        help: "Please try again or check the console for more details."
+      }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }

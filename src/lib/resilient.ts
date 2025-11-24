@@ -57,7 +57,15 @@ export async function resilientStreamText(params: any & { mode?: 'fast' | 'smart
   
   try {
     return await streamText(streamParams);
-  } catch (error) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorLower = errorMessage.toLowerCase();
+    
+    // Don't retry on API key errors - fail fast with clear message
+    if (errorLower.includes('api key') || errorLower.includes('invalid') || errorLower.includes('unauthorized') || errorLower.includes('401')) {
+      throw new Error(`Invalid API Key: ${errorMessage}. Please check your GROQ_API_KEY in .env.local file. Get your key at https://console.groq.com`);
+    }
+    
     console.warn(`⚠️ Stream failed with ${modelId}. Fallback to FAST_MODEL.`, error);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { mode: _, ...fallbackParams } = {
@@ -66,6 +74,18 @@ export async function resilientStreamText(params: any & { mode?: 'fast' | 'smart
       temperature: params.temperature ?? FAST_PARAMS.temperature,
       maxTokens: params.maxTokens ?? FAST_PARAMS.maxTokens,
     };
-    return await streamText(fallbackParams);
+    
+    try {
+      return await streamText(fallbackParams);
+    } catch (fallbackError: unknown) {
+      const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+      const fallbackLower = fallbackMessage.toLowerCase();
+      
+      if (fallbackLower.includes('api key') || fallbackLower.includes('invalid') || fallbackLower.includes('unauthorized')) {
+        throw new Error(`Invalid API Key: ${fallbackMessage}. Please check your GROQ_API_KEY in .env.local file. Get your key at https://console.groq.com`);
+      }
+      
+      throw fallbackError;
+    }
   }
 }
