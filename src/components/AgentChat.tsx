@@ -79,7 +79,7 @@ export function AgentChat({ contextEmailId }: AgentChatProps) {
   const [attachments, setAttachments] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, error } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, error, setInput } = useChat({
     api: '/api/chat',
     body: { contextEmailId },
     onError: (e) => {
@@ -208,10 +208,22 @@ export function AgentChat({ contextEmailId }: AgentChatProps) {
             </p>
             
             <div className="mt-8 grid grid-cols-2 gap-3 w-full max-w-lg">
-               {["Summarize unread emails", "Draft a reply to boss", "Show urgent tasks", "Any newsletters?"].map(q => (
+               {["What emails need my attention?", "Summarize my inbox", "What are my deadlines?", "Tell me about recent emails"].map(q => (
                  <button 
                     key={q}
-                    className="text-xs bg-white border border-slate-200 py-3 px-4 rounded-xl hover:bg-emerald-50 hover:border-emerald-200 transition-all text-slate-600 shadow-sm"
+                    type="button"
+                    onClick={() => {
+                      setInput(q);
+                      // Trigger submit after a brief delay to ensure input is set
+                      setTimeout(() => {
+                        const form = document.querySelector('form');
+                        if (form) {
+                          const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+                          form.dispatchEvent(submitEvent);
+                        }
+                      }, 10);
+                    }}
+                    className="text-xs bg-white border border-slate-200 py-3 px-4 rounded-xl hover:bg-emerald-50 hover:border-emerald-200 transition-all text-slate-600 shadow-sm cursor-pointer"
                  >
                    {q}
                  </button>

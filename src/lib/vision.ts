@@ -23,3 +23,5 @@ export async function analyzeImage(imageBase64: string, prompt: string = "Descri
   }
 }
 
+
+
