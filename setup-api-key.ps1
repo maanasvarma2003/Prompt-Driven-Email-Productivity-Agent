@@ -10,23 +10,23 @@ $envFile = ".env.local"
 
 if (-not (Test-Path $envFile)) {
     Write-Host "Creating .env.local file..." -ForegroundColor Yellow
-    $content = @"
-# Groq API Key Configuration
-# Get your API key from: https://console.groq.com
-GROQ_API_KEY=$ApiKey
-"@
-    $content | Out-File -FilePath $envFile -Encoding utf8
-    Write-Host "✓ .env.local file created with your API key!" -ForegroundColor Green
+    $lines = @(
+        "# Groq API Key Configuration",
+        "# Get your API key from: https://console.groq.com",
+        "GROQ_API_KEY=$ApiKey"
+    )
+    $lines | Out-File -FilePath $envFile -Encoding utf8
+    Write-Host "[OK] .env.local file created with your API key!" -ForegroundColor Green
 } else {
     Write-Host "Updating .env.local file..." -ForegroundColor Yellow
     $content = Get-Content $envFile -Raw
     if ($content -match "GROQ_API_KEY=") {
         $content = $content -replace "GROQ_API_KEY=.*", "GROQ_API_KEY=$ApiKey"
         $content | Set-Content $envFile -Encoding utf8
-        Write-Host "✓ API key updated in .env.local!" -ForegroundColor Green
+        Write-Host "[OK] API key updated in .env.local!" -ForegroundColor Green
     } else {
         Add-Content -Path $envFile -Value "GROQ_API_KEY=$ApiKey" -Encoding utf8
-        Write-Host "✓ API key added to .env.local!" -ForegroundColor Green
+        Write-Host "[OK] API key added to .env.local!" -ForegroundColor Green
     }
 }
 
