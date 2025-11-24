@@ -55,6 +55,12 @@ npm install
 
 #### Step 3: Configure Environment Variables
 
+**Option 1: Quick Setup (PowerShell)**
+```powershell
+.\setup-api-key.ps1 -ApiKey "your_groq_api_key_here"
+```
+
+**Option 2: Manual Setup**
 Create a `.env.local` file in the `email-agent` directory:
 
 ```env
@@ -66,7 +72,9 @@ GROQ_API_KEY=your_groq_api_key_here
 2. Sign up or log in
 3. Navigate to "API Keys" section
 4. Create a new API key
-5. Copy the key and paste it in your `.env.local` file
+5. Copy the key (starts with `gsk_`) and use it in the setup script or `.env.local` file
+
+**Important:** Never commit your `.env.local` file to the repository. It's already in `.gitignore`.
 
 #### Step 4: Run the Development Server
 
