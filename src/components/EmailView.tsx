@@ -32,6 +32,7 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
   const previousEmailIdRef = useRef<string | null>(null);
   
   // Reset local state only when email ID actually changes (not just reference)
+  // But preserve draft state if the email hasn't changed
   useEffect(() => {
     const currentEmailId = email?.id || null;
     
@@ -58,8 +59,17 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
            .then(chips => setSmartChips(chips))
            .catch(err => console.error("Error fetching chips:", err));
       }
+    } else if (email && previousEmailIdRef.current === email.id) {
+      // Email ID hasn't changed - preserve draft state
+      // Only fetch chips if we don't have them yet
+      if (smartChips.length === 0 && email.id) {
+        fetch('/api/chips', { method: 'POST', body: JSON.stringify({ emailId: email.id }) })
+          .then(res => res.json())
+          .then(chips => setSmartChips(chips))
+          .catch(err => console.error("Error fetching chips:", err));
+      }
     }
-  }, [email?.id, sendSuccess]);
+  }, [email?.id, sendSuccess, smartChips.length]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -137,21 +147,24 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
       }
 
       // Success - verify the response indicates success
-      if (responseData?.success !== false) {
+      if (responseData?.success !== false && res.ok) {
         setSendSuccess(true);
-        // Refresh sent list and drafts list
-        await Promise.all([
-          mutate('/api/sent'),
-          mutate('/api/drafts')
-        ]);
+        // Clear the draft from local state after successful send
+        setGeneratedDraft(null);
         
         // Clear attachments after successful send
         setAttachments([]);
         
+        // Force refresh sent list and drafts list with revalidation
+        await Promise.all([
+          mutate('/api/sent', undefined, { revalidate: true }),
+          mutate('/api/drafts', undefined, { revalidate: true })
+        ]);
+        
         // Keep the success message visible - don't auto-hide
         // User can manually close or it will clear when they select a different email
       } else {
-        throw new Error(responseData?.error || "Email sending failed");
+        throw new Error(responseData?.error || responseData?.details || "Email sending failed");
       }
 
     } catch (e: unknown) {

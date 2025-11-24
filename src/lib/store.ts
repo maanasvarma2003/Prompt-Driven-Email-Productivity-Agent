@@ -137,24 +137,33 @@ class Store {
 
   sendDraft(draftId: string, attachments?: Attachment[]): SentEmail | null {
     const draftIndex = this.drafts.findIndex(d => d.id === draftId);
-    if (draftIndex === -1) return null;
+    if (draftIndex === -1) {
+      console.error(`Draft ${draftId} not found in store`);
+      return null;
+    }
 
     const draft = this.drafts[draftIndex];
     const originalEmail = this.emails.find(e => e.id === draft.emailId);
     
+    if (!originalEmail) {
+      console.error(`Original email ${draft.emailId} not found for draft ${draftId}`);
+      // Still create sent email even if original email is missing
+    }
+    
     const sentEmail: SentEmail = {
       id: Math.random().toString(36).substring(7),
-      emailId: draft.emailId,
-      recipient: originalEmail ? originalEmail.sender : "Unknown",
-      subject: draft.subject,
-      body: draft.body,
+      emailId: draft.emailId || '',
+      recipient: originalEmail ? originalEmail.sender : draft.emailId ? "Unknown" : "Unknown",
+      subject: draft.subject || 'No Subject',
+      body: draft.body || '',
       sentAt: new Date().toISOString(),
-      attachments: attachments || draft.attachments
+      attachments: attachments || draft.attachments || []
     };
 
     this.sentEmails.push(sentEmail);
     this.drafts.splice(draftIndex, 1); // Remove from drafts
     
+    console.log(`Email sent successfully: ${sentEmail.id} to ${sentEmail.recipient}`);
     return sentEmail;
   }
 

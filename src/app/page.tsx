@@ -55,6 +55,19 @@ function AppShell() {
   // Mobile Sidebar State
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // Preserve selected email ID when switching views (except when explicitly clearing)
+  useEffect(() => {
+    // When switching back to inbox, preserve the selected email if it exists
+    if (currentView === 'inbox' && selectedId) {
+      // Verify the email still exists in the store
+      const emailExists = emails?.some(e => e.id === selectedId);
+      if (!emailExists && emails && emails.length > 0) {
+        // If selected email no longer exists, select the first email
+        setSelectedId(emails[0].id);
+      }
+    }
+  }, [currentView, emails, selectedId]);
+
   // Run Pre-Cog Engine
   useEffect(() => {
       if (sentEmails) {
@@ -301,7 +314,13 @@ function AppShell() {
                 <Inbox 
                   emails={emails || []} 
                   selectedId={selectedId} 
-                  onSelect={setSelectedId} 
+                  onSelect={(id) => {
+                    setSelectedId(id);
+                    // Ensure we're on inbox view when selecting
+                    if (currentView !== 'inbox') {
+                      setCurrentView('inbox');
+                    }
+                  }} 
                   className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full md:w-80`}
                 />
                 <div className={`flex-1 flex relative shadow-xl z-0 bg-white ${!selectedId ? 'hidden md:flex' : 'flex'}`}>
@@ -309,7 +328,9 @@ function AppShell() {
                     email={selectedEmail} 
                     onProcess={handleProcess}
                     isProcessing={processingId === selectedId}
-                    onBack={() => setSelectedId(null)}
+                    onBack={() => {
+                      setSelectedId(null);
+                    }}
                     className="w-full h-full"
                   />
                 </div>
