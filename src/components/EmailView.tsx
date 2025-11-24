@@ -29,21 +29,37 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
   const [sendSuccess, setSendSuccess] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previousEmailIdRef = useRef<string | null>(null);
   
-  // Reset local state when email changes
+  // Reset local state only when email ID actually changes (not just reference)
   useEffect(() => {
-    setGeneratedDraft(null);
-    setIsDrafting(false);
-    setSmartChips([]);
-    setSendSuccess(false);
-    setAttachments([]);
-    if (email) {
-       // Fetch Smart Chips
-       fetch('/api/chips', { method: 'POST', body: JSON.stringify({ emailId: email.id }) })
-         .then(res => res.json())
-         .then(chips => setSmartChips(chips));
+    const currentEmailId = email?.id || null;
+    
+    // Only reset if the email ID actually changed
+    if (previousEmailIdRef.current !== currentEmailId) {
+      // Don't reset if we just sent an email successfully - keep the success message
+      if (!sendSuccess) {
+        setGeneratedDraft(null);
+        setIsDrafting(false);
+        setSmartChips([]);
+        setAttachments([]);
+      }
+      // Always reset sendSuccess when switching emails
+      if (previousEmailIdRef.current !== null) {
+        setSendSuccess(false);
+      }
+      
+      previousEmailIdRef.current = currentEmailId;
+      
+      if (email) {
+         // Fetch Smart Chips
+         fetch('/api/chips', { method: 'POST', body: JSON.stringify({ emailId: email.id }) })
+           .then(res => res.json())
+           .then(chips => setSmartChips(chips))
+           .catch(err => console.error("Error fetching chips:", err));
+      }
     }
-  }, [email]);
+  }, [email?.id, sendSuccess]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -95,6 +111,8 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
     if (!generatedDraft?.id) return;
     
     setIsSending(true);
+    setSendSuccess(false);
+    
     try {
       const res = await fetch('/api/send', {
         method: 'POST',
@@ -105,23 +123,42 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to send email");
+      // Parse response first to get detailed error if any
+      let responseData;
+      try {
+        responseData = await res.json();
+      } catch (parseError) {
+        throw new Error("Failed to parse server response");
+      }
 
-      // Success
-      setSendSuccess(true);
-      mutate('/api/sent'); // Refresh sent list
-      mutate('/api/drafts'); // Refresh drafts list (it should be removed)
-      
-      // Hide the draft card after a delay or keep success message
-      setTimeout(() => {
-          setGeneratedDraft(null);
-          setSendSuccess(false);
-      }, 3000);
+      if (!res.ok) {
+        const errorMsg = responseData?.error || responseData?.message || `Server error: ${res.status} ${res.statusText}`;
+        throw new Error(errorMsg);
+      }
+
+      // Success - verify the response indicates success
+      if (responseData?.success !== false) {
+        setSendSuccess(true);
+        // Refresh sent list and drafts list
+        await Promise.all([
+          mutate('/api/sent'),
+          mutate('/api/drafts')
+        ]);
+        
+        // Clear attachments after successful send
+        setAttachments([]);
+        
+        // Keep the success message visible - don't auto-hide
+        // User can manually close or it will clear when they select a different email
+      } else {
+        throw new Error(responseData?.error || "Email sending failed");
+      }
 
     } catch (e: unknown) {
       console.error("Send Error:", e);
-      const msg = e instanceof Error ? e.message : "Unknown error";
+      const msg = e instanceof Error ? e.message : "Unknown error occurred while sending email";
       alert(`Error sending email: ${msg}`);
+      // Don't clear the draft on error - let user try again
     } finally {
       setIsSending(false);
     }
@@ -359,8 +396,17 @@ export function EmailView({ email, onProcess, isProcessing, onBack, className = 
                     <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
                         <CheckCircle className="w-6 h-6 text-green-600" />
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900">Email Sent!</h3>
-                    <p className="text-sm text-slate-500">Your reply has been delivered and archived.</p>
+                    <h3 className="text-lg font-bold text-slate-900">Email Sent Successfully!</h3>
+                    <p className="text-sm text-slate-500 mb-4">Your reply has been delivered and saved to Sent.</p>
+                    <button
+                        onClick={() => {
+                            setGeneratedDraft(null);
+                            setSendSuccess(false);
+                        }}
+                        className="text-xs px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
+                    >
+                        Close
+                    </button>
                 </div>
              ) : (
                 <>

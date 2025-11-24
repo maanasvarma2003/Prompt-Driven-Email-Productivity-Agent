@@ -21,10 +21,11 @@ export default function Home() {
   return (
     <SWRConfig 
       value={{
-        refreshInterval: 5000,
+        refreshInterval: 10000, // Increased to 10 seconds to reduce unnecessary refreshes
         fetcher: fetcher,
         revalidateOnFocus: false, 
-        dedupingInterval: 2000,
+        revalidateOnReconnect: true,
+        dedupingInterval: 5000, // Increased to prevent duplicate requests
       }}
     >
       <AppShell />
@@ -74,6 +75,8 @@ function AppShell() {
     console.log(`[handleProcess] Starting process for email: ${id}`);
     setProcessingId(id);
     setErrorMessage(null);
+    setSuccessMessage(null);
+    
     try {
       const res = await fetch('/api/process', {
         method: 'POST',
@@ -99,13 +102,27 @@ function AppShell() {
       }
 
       const processedEmail = await res.json();
-      // Use processedEmail to update UI optimistically or just wait for revalidation
+      // Verify the email was actually processed
+      if (!processedEmail || !processedEmail.id) {
+        throw new Error("Invalid response from server");
+      }
+      
       console.log("Processed:", processedEmail.id);
       
-      await Promise.all([
-        mutate('/api/emails')
-      ]);
-      mutate((key) => typeof key === 'string' && key.startsWith('/api/emails'));
+      // Optimistically update the cache with processed email
+      mutate('/api/emails', async (currentEmails: Email[] | undefined) => {
+        if (!currentEmails) {
+          // If no current data, fetch fresh data
+          const res = await fetch('/api/emails');
+          const freshEmails = await res.json();
+          return freshEmails.map((e: Email) => e.id === id ? processedEmail : e);
+        }
+        // Update the specific email in the cache
+        return currentEmails.map(e => e.id === id ? processedEmail : e);
+      }, { revalidate: true }); // Revalidate to ensure consistency
+      
+      setSuccessMessage("Email processed successfully!");
+      setTimeout(() => setSuccessMessage(null), 3000);
 
     } catch (e: unknown) {
       console.error("Process failed", e);
