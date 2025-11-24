@@ -10,11 +10,12 @@ $envFile = ".env.local"
 
 if (-not (Test-Path $envFile)) {
     Write-Host "Creating .env.local file..." -ForegroundColor Yellow
-    @"
+    $content = @"
 # Groq API Key Configuration
 # Get your API key from: https://console.groq.com
 GROQ_API_KEY=$ApiKey
-"@ | Out-File -FilePath $envFile -Encoding utf8
+"@
+    $content | Out-File -FilePath $envFile -Encoding utf8
     Write-Host "✓ .env.local file created with your API key!" -ForegroundColor Green
 } else {
     Write-Host "Updating .env.local file..." -ForegroundColor Yellow
@@ -29,8 +30,9 @@ GROQ_API_KEY=$ApiKey
     }
 }
 
-Write-Host "`nNext steps:" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Next steps:" -ForegroundColor Cyan
 Write-Host "1. Restart your development server (if running)" -ForegroundColor White
 Write-Host "2. Run: npm run dev" -ForegroundColor White
-Write-Host "3. Test the chatbot - it should work now!`n" -ForegroundColor White
-
+Write-Host "3. Test the chatbot - it should work now!" -ForegroundColor White
+Write-Host ""

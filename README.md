@@ -55,7 +55,7 @@ npm install
 
 #### Step 3: Configure Environment Variables
 
-**Option 1: Quick Setup (PowerShell)**
+**Option 1: Quick Setup Script (PowerShell)**
 ```powershell
 .\setup-api-key.ps1 -ApiKey "your_groq_api_key_here"
 ```
@@ -65,6 +65,14 @@ Create a `.env.local` file in the `email-agent` directory:
 
 ```env
 GROQ_API_KEY=your_groq_api_key_here
+```
+
+**Option 3: Direct PowerShell Command**
+```powershell
+# Create or update .env.local file
+@"
+GROQ_API_KEY=your_groq_api_key_here
+"@ | Out-File -FilePath .env.local -Encoding utf8
 ```
 
 **Getting a Groq API Key:**
