@@ -9,7 +9,14 @@ The project uses Groq LPU for high-speed AI inference. You must configure your A
 
 - **GROQ_API_KEY**: `(Your Groq API Key)`
 
-(Note: The key is hardcoded as a fallback for the demo, but it is best practice to set it in Vercel Environment Variables).
+**Getting Your Groq API Key:**
+1. Visit [console.groq.com](https://console.groq.com)
+2. Sign up or log in
+3. Navigate to "API Keys" section
+4. Create a new API key
+5. Copy the key (starts with `gsk_`)
+
+**Important:** Never commit your API key to the repository. Always use environment variables.
 
 ### 2. Deployment Steps
 1.  Push this code to a GitHub repository.
